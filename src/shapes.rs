@@ -49,41 +49,27 @@ impl InstanceRaw {
     }
 }
 #[derive(Clone, Copy, PartialEq, Debug)]
-pub struct Marble {
+pub struct Ball {
     pub body: Sphere,
-    pub velocity: Vec3,
     pub mass: f32,
-    pub momentum: Vec3,
-    pub force: Vec3,
 }
 
-impl Marble {
+impl Ball {
     pub fn to_raw(&self) -> InstanceRaw {
         InstanceRaw {
             model: (Mat4::from_translation(self.body.c.to_vec()) * Mat4::from_scale(self.body.r))
                 .into(),
         }
     }
-    pub fn update(&mut self, g: f32) {
-        // self.velocity += Vec3::new(0.0, -g, 0.0) * DT;
-        // self.body.c += self.velocity * DT;
-        self.momentum += Vec3::new(0.0, -g, 0.0) * DT;
-        let vel = self.momentum / self.mass;
-        self.body.c += vel * DT;
-    }
-
-    pub fn apply_impulse(&mut self, f: Vec3) {
-        self.momentum += f;
-    }
 }
 
 #[derive(Clone, Copy, PartialEq, Debug)]
-pub struct Wall {
+pub struct Static {
     pub body: Plane,
     // control: (i8, i8),
 }
 
-impl Wall {
+impl Static {
     pub fn to_raw(&self) -> InstanceRaw {
         InstanceRaw {
             model: (Mat4::from(cgmath::Quaternion::between_vectors(
