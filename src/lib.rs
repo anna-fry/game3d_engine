@@ -6,7 +6,10 @@ use winit::{
     event::*,
     event_loop::{ControlFlow, EventLoop},
     window::Window,
+    platform::run_return::EventLoopExtRunReturn,
 };
+
+//use winit::platform::desktop::EventLoopExtDesktop;
 
 pub mod model;
 pub mod texture;
@@ -39,9 +42,9 @@ pub const DT: f32 = 1.0 / 60.0;
 pub trait Game: Sized {
     type StaticData;
     type SystemData;
-    fn start(engine: &mut Engine) -> (Self, Self::StaticData);
-    fn update(&mut self, rules: &Self::StaticData, engine: &mut Engine);
-    fn render(&self, rules: &Self::StaticData, igs: &mut InstanceGroups);
+    fn start(engine: &mut Engine) -> Self;
+    fn update(&mut self, engine: &mut Engine);
+    fn render(&self, igs: &mut InstanceGroups);
 }
 
 pub struct Engine {
@@ -89,7 +92,8 @@ pub fn run<C, S, G: Game<StaticData = C, SystemData = S>>(
         events,
         frame: 0,
     };
-    let (mut game, rules) = G::start(&mut engine);
+
+    let mut game = G::start(&mut engine);
     // How many unsimulated frames have we saved up?
     let mut available_time: f32 = 0.0;
     let mut since = Instant::now();
@@ -126,7 +130,7 @@ pub fn run<C, S, G: Game<StaticData = C, SystemData = S>>(
                 }
             }
             Event::RedrawRequested(_) => {
-                match engine.render.render(&game, &rules, &mut engine.assets) {
+                match engine.render.render(&game, &mut engine.assets) {
                     Ok(_) => {}
                     // Recreate the swap_chain if lost
                     Err(wgpu::SwapChainError::Lost) => engine.render.resize(engine.render.size),
@@ -146,7 +150,7 @@ pub fn run<C, S, G: Game<StaticData = C, SystemData = S>>(
             // Eat up one frame worth of time
             available_time -= DT;
 
-            game.update(&rules, &mut engine);
+            game.update(&mut engine);
 
             engine.events.next_frame();
             engine.frame += 1;

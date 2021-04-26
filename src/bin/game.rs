@@ -11,11 +11,11 @@ use winit::{
 
 // mod model;
 // mod texture;
-use game3d_engine::model::{DrawModel, Model, ModelVertex, Vertex};
+use game3d_engine::{Engine, Game, model::{DrawModel, Model, ModelVertex, Vertex}, render::InstanceGroups, run};
 
 use game3d_engine::texture::*;
 
-use game3d_engine::shapes::{InstanceRaw, Ball, Static};
+use game3d_engine::shapes::{Ball, Static};
 // mod camera;
 use game3d_engine::camera::Camera;
 // mod camera_control;
@@ -23,57 +23,95 @@ use game3d_engine::camera_control::CameraController;
 
 use game3d_engine::geom::*;
 // mod collision;
-use game3d_engine::collision::*;
+use game3d_engine::collision::CollisionDetection;
 
 use game3d_engine::physics::{Physics, BallMovement};
 
-struct Components {
+use game3d_engine::events::{Events};
+
+// use game3d_engine::render::{Render};
+
+struct GameData {
+    ball_model: game3d_engine::assets::ModelRef,
+    wall_model: game3d_engine::assets::ModelRef,
+}
+
+pub struct Components {
     balls: Vec<Ball>,      // game specific
     statics: Vec<Static>,  // game specific
-    goal: Vec<Goal>,       // game specific
+    // goal: Vec<Goal>,       // game specific
     physics: Vec<Physics>, // in engine
-    models: Vec<Model>,    // in engine
-    shapes: Vec<Shape>,    // in engine
-    events: Events,        // in engine, inputs from keyboard/keys
-    camera: Camera,        // in engine
+    models: GameData,    // in engine
+    // shapes: Vec<Shape>,    // in engine
+    // events: Events,        // in engine, inputs from keyboard/keys
+    //camera: Camera,        // in engine
 }
 
 impl Components {
-    pub fn new() {
-
+    pub fn new(engine: &mut Engine) -> Self{
+        let game_data = GameData {
+            ball_model: engine.load_model("sphere.obj"),
+            wall_model: engine.load_model("floor.obj")
+        };
+        Components {
+            balls: vec![],
+            statics: vec![],
+            physics: vec![],
+            models: game_data,
+        }
     }
 }
 
-struct Systems {
+
+pub struct Systems {
     ball_movement: BallMovement,             // game specific
     collision_detection: CollisionDetection, // in engine
-    render: Render,                          // in engine
+    // render: Render,                          // in engine
 }
 
 impl Systems {
-    pub fn new() {
-
+    pub fn new() -> Self {
+        Systems {
+            ball_movement: BallMovement::new(),
+            collision_detection: CollisionDetection::new(),
+        }
     }
-    pub fn process(&mut self, g: &mut Game) {
-        self.ball_movement.update(&mut g.balls, &mut g.physics);
-        self.collision_detection.update(&g.statics, &mut g.balls, &mut g.physics);
+    pub fn process(&mut self, c: &mut Components) {
+        self.ball_movement.update(&mut c.balls, &mut c.physics);
+        self.collision_detection.update(&c.statics, &mut c.balls, &mut c.physics);
     }
 }
 
-struct BallGame {
+pub struct BallGame {
     components: Components,
     systems: Systems,
 }
 
 impl Game for BallGame {
-    fn start(engine: &mut Engine) -> (Self, Self::StaticData) {
-
+    type StaticData = Components;
+    type SystemData = Systems;
+    fn start(engine: &mut Engine) -> Self { 
+        let components = Components::new(engine);
+        let systems = Systems::new();
+        let game = BallGame {
+            components: components,
+            systems: systems,
+        };
+        game
     }
-    fn update(&mut self, rules: &Self::StaticData, engine: &mut Engine) {
 
+    fn update(&mut self, engine: &mut Engine) {
+        self.systems.process(&mut self.components);
     }
-    fn render(&self, rules: &Self::StaticData, igs: &mut InstanceGroups) {
 
+    fn render(&self, igs: &mut InstanceGroups) {
+        for ball in  self.components.balls.iter() {
+            ball.render(self.components.models.ball_model, igs);
+        }
+
+        for stat in self.components.statics.iter() {
+            stat.render(self.components.models.wall_model, igs);
+        }
     }
 }
 
@@ -81,5 +119,5 @@ fn main() {
     env_logger::init();
     let title = env!("CARGO_PKG_NAME");
     let window = winit::window::WindowBuilder::new().with_title(title);
-    run::<Components, Systems, Game<Components, Systems>>(window, std::path::Path::new("content"));
+    game3d_engine::run::<Components, Systems, BallGame>(window, std::path::Path::new("content"));
 }

@@ -207,7 +207,6 @@ impl Render {
     pub(crate) fn update_buffers<R, G: Game<StaticData = R>>(
         &mut self,
         game: &G,
-        rules: &R,
         assets: &mut Assets,
     ) {
         self.uniforms.update_view_proj(&self.camera);
@@ -217,7 +216,7 @@ impl Render {
             bytemuck::cast_slice(&[self.uniforms]),
         );
         self.instance_groups.clear();
-        game.render(rules, &mut self.instance_groups);
+        game.render(&mut self.instance_groups);
         self.instance_groups
             .update_buffers(&self.queue, &self.device, assets);
     }
@@ -235,10 +234,9 @@ impl Render {
     pub(crate) fn render<R, G: Game<StaticData = R>>(
         &mut self,
         game: &G,
-        rules: &R,
         assets: &mut Assets,
     ) -> Result<(), wgpu::SwapChainError> {
-        self.update_buffers(game, rules, assets);
+        self.update_buffers(game, assets);
 
         let frame = self.swap_chain.get_current_frame()?.output;
 

@@ -36,11 +36,16 @@ impl Contacts {
     }
 }
 
-struct CollisionDetection {
+pub struct CollisionDetection {
     contacts: Contacts,
 }
 
 impl CollisionDetection {
+    pub fn new() -> Self {
+        CollisionDetection {
+            contacts: Contacts::new()
+        }
+    }
     pub fn restitute(&mut self, statics: &[Static], balls: &mut [Ball], physics: &mut [Physics]) {
         self.contacts.sort();
         // Lots of marbles on the floor...
