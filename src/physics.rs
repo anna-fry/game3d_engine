@@ -24,7 +24,7 @@ impl BallMovement {
             gravity: 3.0,
         }
     }
-    pub fn update(&mut self, balls: &mut Vec<Ball>, physics: &mut Vec<Physics>) {
+    pub fn update(&self, balls: &mut Vec<Ball>, physics: &mut Vec<Physics>) {
         for (b, p) in balls.iter_mut().zip(physics.iter_mut()) {
             p.momentum += Vec3::new(0.0, -self.gravity, 0.0) * DT;
             let vel = p.momentum / b.mass;
