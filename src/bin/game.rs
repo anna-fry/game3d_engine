@@ -49,35 +49,53 @@ pub struct Components {
 
 impl Components {
     pub fn new(engine: &mut Engine) -> Self{
-        let game_data = GameData {
-            ball_model: engine.load_model("sphere.obj"),
-            wall_model: engine.load_model("floor.obj")
-        };
-
+        let balls = vec![
+            Ball {
+                body: Sphere {
+                    c: Pos3::new(0.0, 3.0, 0.0),
+                    r: 0.3,
+                },
+                mass: 4.0 * 3.14 * (0.3).powf(3.0) / 3.0
+            },
+        ];
         let walls = vec![
             Static {
                 body: Plane {
                     n: Vec3::new(0.0, 1.0, 0.0),
                     d: 0.0,
                 },
+                position: Vec3::new(0.0, -0.025, 0.0)
             },
             Static {
                 body: Plane {
-                    n: Vec3::new(1.0, 0.0, 0.0),
+                    n: Vec3::new(0.0, 0.0, 1.0),
                     d: 0.0,
                 },
+                position: Vec3::new(0.0, 0.0, 20.0)
             },
-        ];
-
-        let balls = vec![
-            Ball {
-                body: Sphere {
-                    c: Pos3::new(0.0, 0.0, 0.0),
-                    r: 1.0,
+            Static {
+                body: Plane {
+                    n: Vec3::new(-1.0, 0.0, -1.0),
+                    d: 0.0,
                 },
-                mass: 4.0 * 3.14 / 3.0,
+                position: Vec3::new(20.0, 0.0, -20.0)
             }
         ];
+        let physics = vec![
+            Physics {
+                velocity: Vec3::zero(),
+                momentum: Vec3::zero(),
+                force: Vec3::zero(),
+            }
+        ];
+        let game_data = GameData {
+            ball_model: engine.load_model("sphere.obj"),
+            wall_model: engine.load_model("floor.obj")
+        };
+
+        
+
+        
 
         let physics = vec![
             Physics {
