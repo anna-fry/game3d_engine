@@ -1,91 +1,42 @@
 use crate::camera::Camera;
+use crate::events::{Events};
+use crate::shapes::{Ball};
 use crate::geom::*;
 use cgmath::InnerSpace;
 use winit::event::*;
 
 pub struct CameraController {
-    speed: f32,
-    is_forward_pressed: bool,
-    is_backward_pressed: bool,
-    is_left_pressed: bool,
-    is_right_pressed: bool,
+    pub pitch: f32,
+    pub yaw: f32,
+    pub player_pos: Pos3,
 }
 
 impl CameraController {
-    pub fn new(speed: f32) -> Self {
+    pub fn new() -> Self {
         Self {
-            speed,
-            is_forward_pressed: false,
-            is_backward_pressed: false,
-            is_left_pressed: false,
-            is_right_pressed: false,
+            pitch: 0.0,
+            yaw: 0.0,
+            player_pos: Pos3::new(0.0, 0.0, 0.0),
         }
     }
-
-    pub fn process_events(&mut self, event: &WindowEvent) -> bool {
-        match event {
-            WindowEvent::KeyboardInput {
-                input:
-                    KeyboardInput {
-                        state,
-                        virtual_keycode: Some(keycode),
-                        ..
-                    },
-                ..
-            } => {
-                let is_pressed = *state == ElementState::Pressed;
-                match keycode {
-                    VirtualKeyCode::Up => {
-                        self.is_forward_pressed = is_pressed;
-                        true
-                    }
-                    VirtualKeyCode::Left => {
-                        self.is_left_pressed = is_pressed;
-                        true
-                    }
-                    VirtualKeyCode::Down => {
-                        self.is_backward_pressed = is_pressed;
-                        true
-                    }
-                    VirtualKeyCode::Right => {
-                        self.is_right_pressed = is_pressed;
-                        true
-                    }
-                    _ => false,
-                }
-            }
-            _ => false,
-        }
+    pub fn update(&mut self, events: &Events, player: &Ball) {
+        let (dx, dy) = events.mouse_delta();
+        self.pitch += dy / 100.0;
+        self.pitch = self.pitch.clamp(-PI / 4.0, PI / 4.0);
+        self.yaw -= dx / 100.0;
+        self.yaw = self.yaw.clamp(-PI / 4.0, PI / 4.0);
+        self.player_pos = player.body.c;
     }
-
-    pub fn update_camera(&self, camera: &mut Camera) {
-        let forward = camera.target - camera.eye;
-        let forward_norm = forward.normalize();
-        let forward_mag = forward.magnitude();
-
-        // Prevents glitching when camera gets too close to the
-        // center of the scene.
-        if self.is_forward_pressed && forward_mag > self.speed {
-            camera.eye += forward_norm * self.speed;
-        }
-        if self.is_backward_pressed {
-            camera.eye -= forward_norm * self.speed;
-        }
-
-        let right = forward_norm.cross(camera.up);
-
-        // Redo radius calc in case the up/ down is pressed.
-        let forward = camera.target - camera.eye;
-        let forward_mag = forward.magnitude();
-
-        if self.is_right_pressed {
-            // Rescale the distance between the target and eye so
-            // that it doesn't change. The eye therefore still
-            // lies on the circle made by the target and eye.
-            camera.eye = camera.target - (forward + right * self.speed).normalize() * forward_mag;
-        }
-        if self.is_left_pressed {
-            camera.eye = camera.target - (forward - right * self.speed).normalize() * forward_mag;
-        }
+    pub fn update_camera(&self, c: &mut Camera) {
+        c.eye = self.player_pos + Vec3::new(0.0, 0.5, 0.0);
+        // The camera is pointing at a point just in front of the composition of the player's rot and the camera's rot (player * cam * forward-offset)
+        c.target = c.eye
+             + Quat::new(1.0, 0.0, 0.0, 0.0)
+            * Quat::from(cgmath::Euler::new(
+                    cgmath::Rad(self.pitch),
+                    cgmath::Rad(self.yaw),
+                    cgmath::Rad(0.0),
+                ))
+                * Vec3::unit_z();
     }
 }

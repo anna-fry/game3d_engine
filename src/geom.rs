@@ -2,6 +2,8 @@ pub use cgmath::prelude::*;
 pub type Vec3 = cgmath::Vector3<f32>;
 pub type Pos3 = cgmath::Point3<f32>;
 pub type Mat4 = cgmath::Matrix4<f32>;
+pub type Quat = cgmath::Quaternion<f32>;
+pub const PI: f32 = std::f32::consts::PI;
 
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Sphere {

@@ -17,7 +17,7 @@ use game3d_engine::texture::*;
 
 use game3d_engine::shapes::{Ball, Static};
 // mod camera;
-use game3d_engine::camera::Camera;
+use game3d_engine::camera::{Camera};
 // mod camera_control;
 use game3d_engine::camera_control::CameraController;
 
@@ -44,7 +44,7 @@ pub struct Components {
     models: GameData,    // in engine
     // shapes: Vec<Shape>,    // in engine
     // events: Events,        // in engine, inputs from keyboard/keys
-    //camera: Camera,        // in engine
+    camera: CameraController,        // in engine
 }
 
 impl Components {
@@ -92,11 +92,13 @@ impl Components {
             ball_model: engine.load_model("sphere.obj"),
             wall_model: engine.load_model("floor.obj")
         };
+        let camera = CameraController::new();
         Components {
             balls: balls,
             statics: statics,
             physics: physics,
             models: game_data,
+            camera: camera,
         }
     }
 }
@@ -140,6 +142,8 @@ impl Game for BallGame {
     }
 
     fn update(&mut self, engine: &mut Engine) {
+        self.components.camera.update(&engine.events, &self.components.balls[0]);
+        self.components.camera.update_camera(engine.camera_mut());
         self.systems.process(&mut self.components);
     }
 
