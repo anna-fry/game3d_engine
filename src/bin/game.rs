@@ -55,10 +55,10 @@ impl Components {
                     c: Pos3::new(0.0, 3.0, 0.0),
                     r: 0.3,
                 },
-                mass: 0.12
+                mass: 4.0 * 3.14 * (0.3 as f32).powf(3.0) / 3.0
             },
         ];
-        let statics = vec![
+        let walls = vec![
             Static {
                 body: Plane {
                     n: Vec3::new(0.0, 1.0, 0.0),
@@ -95,7 +95,7 @@ impl Components {
         let camera = CameraController::new();
         Components {
             balls: balls,
-            statics: statics,
+            statics: walls,
             physics: physics,
             models: game_data,
             camera: camera,
