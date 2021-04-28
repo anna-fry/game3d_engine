@@ -53,10 +53,44 @@ impl Components {
             ball_model: engine.load_model("sphere.obj"),
             wall_model: engine.load_model("floor.obj")
         };
+
+        let walls = vec![
+            Static {
+                body: Plane {
+                    n: Vec3::new(0.0, 1.0, 0.0),
+                    d: 0.0,
+                },
+            },
+            Static {
+                body: Plane {
+                    n: Vec3::new(1.0, 0.0, 0.0),
+                    d: 0.0,
+                },
+            },
+        ];
+
+        let balls = vec![
+            Ball {
+                body: Sphere {
+                    c: Pos3::new(0.0, 0.0, 0.0),
+                    r: 1.0,
+                },
+                mass: 4.0 * 3.14 / 3.0,
+            }
+        ];
+
+        let physics = vec![
+            Physics {
+                velocity: Vec3::zero(),
+                momentum: Vec3::zero(),
+                force: Vec3::zero(),
+            }
+        ];
+
         Components {
-            balls: vec![],
-            statics: vec![],
-            physics: vec![],
+            balls: balls,
+            statics: walls,
+            physics: physics,
             models: game_data,
         }
     }
