@@ -55,7 +55,7 @@ impl Components {
                     c: Pos3::new(0.0, 3.0, 0.0),
                     r: 0.3,
                 },
-                mass: 4.0 * 3.14 * (0.3).powf(3.0) / 3.0
+                mass: 4.0 * 3.14 * (0.3_f32).powf(3.0) / 3.0
             },
         ];
         let walls = vec![
