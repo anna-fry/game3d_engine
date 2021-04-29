@@ -1,3 +1,7 @@
+use crate::events::{Events};
+use crate::shapes::{Ball};
+use crate::geom::{Quat, Vec3, PI, Pos3};
+
 pub struct Camera {
     pub eye: cgmath::Point3<f32>,
     pub target: cgmath::Point3<f32>,
@@ -15,3 +19,4 @@ impl Camera {
         proj * view
     }
 }
+

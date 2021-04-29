@@ -17,7 +17,7 @@ use game3d_engine::texture::*;
 
 use game3d_engine::shapes::{Ball, Static};
 // mod camera;
-use game3d_engine::camera::Camera;
+use game3d_engine::camera::{Camera};
 // mod camera_control;
 use game3d_engine::camera_control::CameraController;
 
@@ -44,7 +44,7 @@ pub struct Components {
     models: GameData,    // in engine
     // shapes: Vec<Shape>,    // in engine
     // events: Events,        // in engine, inputs from keyboard/keys
-    //camera: Camera,        // in engine
+    camera: CameraController,        // in engine
 }
 
 impl Components {
@@ -55,7 +55,8 @@ impl Components {
                     c: Pos3::new(0.0, 3.0, 0.0),
                     r: 0.3,
                 },
-                mass: 4.0 * 3.14 * (0.3_f32).powf(3.0) / 3.0
+                mass: 4.0 * 3.14 * (0.3_f32).powf(3.0) / 3.0,
+                play: false
             },
         ];
         let walls = vec![
@@ -92,24 +93,13 @@ impl Components {
             ball_model: engine.load_model("sphere.obj"),
             wall_model: engine.load_model("floor.obj")
         };
-
-        
-
-        
-
-        let physics = vec![
-            Physics {
-                velocity: Vec3::zero(),
-                momentum: Vec3::zero(),
-                force: Vec3::zero(),
-            }
-        ];
-
+        let camera = CameraController::new();
         Components {
             balls: balls,
             statics: walls,
             physics: physics,
             models: game_data,
+            camera: camera,
         }
     }
 }
@@ -128,8 +118,8 @@ impl Systems {
             collision_detection: CollisionDetection::new(),
         }
     }
-    pub fn process(&mut self, c: &mut Components) {
-        self.ball_movement.update(&mut c.balls, &mut c.physics);
+    pub fn process(&mut self, events: &Events, c: &mut Components) {
+        self.ball_movement.update(events, &mut c.balls, &mut c.physics);
         self.collision_detection.update(&c.statics, &mut c.balls, &mut c.physics);
     }
 }
@@ -153,7 +143,9 @@ impl Game for BallGame {
     }
 
     fn update(&mut self, engine: &mut Engine) {
-        self.systems.process(&mut self.components);
+        self.components.camera.update(&engine.events, &self.components.balls[0]);
+        self.components.camera.update_camera(engine.camera_mut());
+        self.systems.process(&engine.events, &mut self.components);
     }
 
     fn render(&self, igs: &mut InstanceGroups) {

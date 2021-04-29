@@ -63,15 +63,15 @@ impl Engine {
             model,
         )
     }
-    // pub fn camera_mut(&mut self) -> &mut camera::Camera {
-    //     &mut self.render.camera
+    pub fn camera_mut(&mut self) -> &mut camera::Camera {
+        &mut self.render.camera
+    }
+    // pub fn set_ambient(&mut self, amb: f32) {
+    //     self.render.set_ambient(amb);
     // }
-//     pub fn set_ambient(&mut self, amb: f32) {
-//         self.render.set_ambient(amb);
-//     }
-//     pub fn set_lights(&mut self, lights: impl IntoIterator<Item = lights::Light>) {
-//         self.render.set_lights(lights.into_iter().collect());
-//     }
+    // pub fn set_lights(&mut self, lights: impl IntoIterator<Item = lights::Light>) {
+    //     self.render.set_lights(lights.into_iter().collect());
+    // }
 }
 
 pub fn run<C, S, G: Game<StaticData = C, SystemData = S>>(
