@@ -15,17 +15,28 @@ impl CameraController {
     pub fn new() -> Self {
         Self {
             pitch: 0.0,
-            yaw: 0.0,
+            yaw: PI / 4.0,
             player_pos: Pos3::new(0.0, 0.0, 0.0),
         }
     }
     pub fn update(&mut self, events: &Events, player: &mut Ball) {
         // TODO: Change the control to the arrow keys?
-        let (dx, dy) = events.mouse_delta();
-        self.pitch += dy / 100.0;
+        if events.key_held(VirtualKeyCode::W) {
+            self.pitch -= 0.025;
+        }
+        else if events.key_held(VirtualKeyCode::S) {
+            self.pitch += 0.025;
+        }
+        if events.key_held(VirtualKeyCode::A) {
+            self.yaw += 0.025;
+        }
+        else if events.key_held(VirtualKeyCode::D) {
+            self.yaw -= 0.025;
+        }
         self.pitch = self.pitch.clamp(-PI / 4.0, PI / 4.0);
-        self.yaw -= dx / 100.0;
-        self.yaw = self.yaw.clamp(-PI / 4.0, PI / 4.0);
+        self.yaw = self.yaw.clamp(0.0, PI / 2.0);
+        player.pitch = self.pitch;
+        player.yaw = self.yaw;
         if !player.play {
             player.body.c = self.player_pos;
         }

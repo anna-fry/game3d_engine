@@ -60,9 +60,11 @@ impl Components {
         let balls = vec![
             Ball {
                 body: Sphere {
-                    c: Pos3::new(0.0, 3.0, 0.0),
+                    c: Pos3::new(-20.0, 5.0, -20.0),
                     r: 0.1,
                 },
+                pitch: 0.0,
+                yaw: 0.0,
                 mass: 4.0 * 3.14 * (0.3_f32).powf(3.0) / 3.0,
                 play: false
             },
@@ -77,17 +79,17 @@ impl Components {
             },
             Static {
                 body: Plane {
-                    n: Vec3::new(0.0, 0.0, 1.0),
+                    n: Vec3::new(0.0, 0.0, -1.0),
                     d: 0.0,
                 },
-                position: Vec3::new(0.0, 0.0, 20.0)
+                position: Vec3::new(0.0, -0.025, 0.0)
             },
             Static {
                 body: Plane {
-                    n: Vec3::new(-1.0, 0.0, -1.0),
+                    n: Vec3::new(-1.0, 0.0, 0.0),
                     d: 0.0,
                 },
-                position: Vec3::new(20.0, 0.0, -20.0)
+                position: Vec3::new(0.0, -0.025, 0.0)
             }
         ];
         let physics = vec![
@@ -172,7 +174,7 @@ impl Game for BallGame {
         };
 
         
-        igs.render_2d(rect, None);
+        // igs.render_2d(rect, None);
     }
 }
 

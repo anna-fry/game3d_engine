@@ -8,6 +8,8 @@ use crate::geom::{Mat4, Plane, Sphere, Vec3};
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Ball {
     pub body: Sphere,
+    pub pitch: f32,
+    pub yaw: f32,
     pub mass: f32,
     pub play: bool,
 }

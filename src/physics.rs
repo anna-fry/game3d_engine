@@ -39,65 +39,41 @@ impl Force {
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct BallMovement {
     gravity: Force,
-    player_force: Force,
+    player_mag: f32,
 }
 
 impl BallMovement {
     pub fn new() -> Self {
         BallMovement {
             gravity: Force::new(Vec3::new(0.0, -3.0, 0.0)),
-            player_force: Force::new(Vec3::zero()),
+            player_mag: 0.0,
         }
     }
 
     pub fn update(&mut self, events: &Events, balls: &mut Vec<Ball>, physics: &mut Vec<Physics>) {
-        match self.player_force.force {
-            Vector3 { x, y, z } => {
-                
-                if events.key_pressed(VirtualKeyCode::Left) {
-                    if x > -10.0 {
-                        self.player_force.update_force(Vec3::new(-2.0, 0.0, 0.0));
-                    }
-                }
-                else if events.key_pressed(VirtualKeyCode::Right) {
-                    if x < 10.0 {
-                        self.player_force.update_force(Vec3::new(0.0, 0.0, 2.0));
-                    }
-                }
-                
-                if events.key_pressed(VirtualKeyCode::Up) {
-                    if y < 10.0 {
-                        self.player_force.update_force(Vec3::new(0.0, 0.0, 2.0));
-                    }
-                }
-                else if events.key_pressed(VirtualKeyCode::Down) {
-                    if y > -10.0 {
-                        self.player_force.update_force(Vec3::new(0.0, 0.0, -2.0));
-                    }
-                }
-
-                if events.key_pressed(VirtualKeyCode::W) {
-                    if z < 10.0 {
-                        self.player_force.update_force(Vec3::new(0.0, 2.0, 0.0));
-                    }
-                }
-                else if events.key_pressed(VirtualKeyCode::S) {
-                    if z > -10.0 {
-                        self.player_force.update_force(Vec3::new(0.0, -2.0, 0.0));
-                    }
-                }
+        if events.key_held(VirtualKeyCode::Up) {
+            if self.player_mag < 40.0 {
+                self.player_mag += 2.0;
+            }
+        }
+        else if events.key_held(VirtualKeyCode::Down) {
+            if self.player_mag > 0.0 {
+                self.player_mag -= 2.0;
             }
         }
 
 
-        
-
         for (b, p) in balls.iter_mut().zip(physics.iter_mut()) {
             if events.key_pressed(VirtualKeyCode::Space) {
                 b.play = true;
+                let x = self.player_mag * b.yaw.sin() * (-b.pitch).cos();
+                let y = self.player_mag * b.yaw.sin() * (-b.pitch).sin();
+                let z = self.player_mag * b.yaw.cos();
+                let player_force = Force::new(Vec3::new(x, y, z));
+                p.momentum += player_force.apply_force() * DT;
             }
             if b.play {
-                p.momentum += (b.mass*(self.gravity.apply_force() + self.player_force.apply_force())) * DT;
+                p.momentum += (b.mass*self.gravity.apply_force()) * DT;
                 let vel = p.momentum / b.mass;
                 b.body.c += vel * DT;
             }
