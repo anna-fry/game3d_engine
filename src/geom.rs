@@ -17,6 +17,15 @@ pub struct Plane {
     pub d: f32,
 }
 
+
+#[derive(Clone, Copy, PartialEq, Debug)]
+pub struct Rect {
+    pub x: f32,
+    pub y: f32,
+    pub w: f32, 
+    pub h: f32,
+}
+
 /// Are s1 and s2 touching?
 #[allow(dead_code)]
 pub fn touching_sphere_sphere(s1: &Sphere, s2: &Sphere) -> bool {

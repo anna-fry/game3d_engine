@@ -1,4 +1,4 @@
-use crate::assets::{Assets, ModelRef};
+use crate::{assets::{Assets, ModelRef}, geom::Rect};
 use crate::camera::Camera;
 use crate::model::*;
 use crate::texture;
@@ -15,7 +15,8 @@ pub(crate) struct Render {
     sc_desc: wgpu::SwapChainDescriptor,
     swap_chain: wgpu::SwapChain,
     pub(crate) size: winit::dpi::PhysicalSize<u32>,
-    render_pipeline: wgpu::RenderPipeline,
+    render_3d_pipeline: wgpu::RenderPipeline,
+    render_2d_pipeline: wgpu::RenderPipeline,
     pub(crate) texture_layout: wgpu::BindGroupLayout,
     pub(crate) camera: Camera,
     uniforms: Uniforms,
@@ -141,11 +142,38 @@ impl Render {
                 push_constant_ranges: &[],
             });
 
+        let render_2d_pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+            label: Some("Render 2D Pipeline Layout"),
+            bind_group_layouts: &[],
+            push_constant_ranges: &[],
+        });
+
         let vs_module = device.create_shader_module(&wgpu::include_spirv!("shader.vert.spv"));
         let fs_module = device.create_shader_module(&wgpu::include_spirv!("shader.frag.spv"));
+       
+        // let vs_src = include_str!("2d_shader.vert");
+        // let fs_src = include_str!("2d_shader.frag");
+        // let mut compiler = shaderc::Compiler::new().unwrap();
+        // let vs_spirv = compiler.compile_into_spirv(vs_src, shaderc::ShaderKind::Vertex, "2d_shader.vert", "main", None).unwrap();
+        // let fs_spirv = compiler.compile_into_spirv(fs_src, shaderc::ShaderKind::Fragment, "2d_shader.frag", "main", None).unwrap();
+        // let vs_data = wgpu::util::make_spirv(vs_spirv.as_binary_u8());
+        // let fs_data = wgpu::util::make_spirv(fs_spirv.as_binary_u8());
+        // let vs_2d_module = device.create_shader_module(&wgpu::ShaderModuleDescriptor {
+        //     label: Some("Vertex Shader"),
+        //     source: vs_data,
+        //     flags: wgpu::ShaderFlags::default(),
+        // });
+        // let fs_2d_module = device.create_shader_module(&wgpu::ShaderModuleDescriptor {
+        //     label: Some("Fragment Shader"),
+        //     source: fs_data,
+        //     flags: wgpu::ShaderFlags::default(),
+        // });
+        let vs_2d_module = device.create_shader_module(&wgpu::include_spirv!("shader_2d.vert.spv"));
+        let fs_2d_module = device.create_shader_module(&wgpu::include_spirv!("shader_2d.frag.spv"));
+    
 
-        let render_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-            label: Some("Render Pipeline"),
+        let render_3d_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+            label: Some("3D Render Pipeline"),
             layout: Some(&render_pipeline_layout),
             vertex: wgpu::VertexState {
                 module: &vs_module,
@@ -186,21 +214,64 @@ impl Render {
             },
         });
 
+        let render_2d_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor{
+            label: Some("2D Render Pipeline"),
+            layout: Some(&render_2d_pipeline_layout),
+            vertex: wgpu::VertexState {
+                module: &vs_2d_module,
+                entry_point: "main",
+                buffers: &[Model2DVertex::desc()],
+            },
+            fragment: Some(wgpu::FragmentState {
+                module: &fs_2d_module,
+                entry_point: "main",
+                targets: &[wgpu::ColorTargetState {
+                    format: sc_desc.format,
+                    alpha_blend: wgpu::BlendState::REPLACE,
+                    color_blend: wgpu::BlendState::REPLACE,
+                    write_mask: wgpu::ColorWrite::ALL,
+                }],
+            }),
+            primitive: wgpu::PrimitiveState {
+                topology: wgpu::PrimitiveTopology::TriangleStrip,
+                strip_index_format: None,
+                front_face: wgpu::FrontFace::Ccw,
+                cull_mode: wgpu::CullMode::Back,
+                // Setting this to anything other than Fill requires Features::NON_FILL_POLYGON_MODE
+                polygon_mode: wgpu::PolygonMode::Fill,
+            },
+            depth_stencil: Some(wgpu::DepthStencilState {
+                format: texture::Texture::DEPTH_FORMAT,
+                depth_write_enabled: false,
+                depth_compare: wgpu::CompareFunction::Always,
+                stencil: wgpu::StencilState::default(),
+                bias: wgpu::DepthBiasState::default(),
+                // Setting this to true requires Features::DEPTH_CLAMPING
+                clamp_depth: false,
+            }),
+            multisample: wgpu::MultisampleState {
+                count: 1,
+                mask: !0,
+                alpha_to_coverage_enabled: false,
+            },
+        });
+
         Self {
+            instance_groups: InstanceGroups::new(&device),
             surface,
             device,
             queue,
             sc_desc,
             swap_chain,
             size,
-            render_pipeline,
+            render_3d_pipeline,
+            render_2d_pipeline,
             camera,
             uniform_buffer,
             uniform_bind_group,
             uniforms,
             texture_layout: texture_bind_group_layout,
             depth_texture,
-            instance_groups: InstanceGroups::new(),
         }
     }
 
@@ -272,7 +343,7 @@ impl Render {
                 }),
             });
 
-            render_pass.set_pipeline(&self.render_pipeline);
+            render_pass.set_pipeline(&self.render_3d_pipeline);
             for (mr, (irs, buf, _cap)) in self.instance_groups.groups.iter() {
                 render_pass.set_vertex_buffer(1, buf.as_ref().unwrap().slice(..));
                 render_pass.draw_model_instanced(
@@ -280,6 +351,18 @@ impl Render {
                     0..irs.len() as u32,
                     &self.uniform_bind_group,
                 );
+            }
+
+            render_pass.set_pipeline(&self.render_2d_pipeline);
+            let quad_buffer = &self.instance_groups.quad_buffer;
+            for (rect, _) in self.instance_groups.groups_2d.iter() {
+                // rect into four model 2d vertices
+                let rect_vertices = [Model2DVertex{ position: [rect.x, rect.y], color: [255.0, 0.0, 0.0]}, Model2DVertex{ position: [rect.x + rect.w, rect.y], color: [0.0, 255.0, 0.0]}, Model2DVertex{ position: [rect.x, rect.y + rect.h], color: [0.0, 0.0, 255.0]}, Model2DVertex{ position: [rect.x + rect.w, rect.y + rect.h], color: [125.0, 0.0, 125.0]}];
+                let vertices = bytemuck::cast_slice(&rect_vertices);
+                self.queue.write_buffer(quad_buffer, 0, vertices);
+                render_pass.set_vertex_buffer(0, quad_buffer.slice(..));
+                render_pass.draw(0..4, 0..1);
+                //re
             }
         }
 
@@ -291,17 +374,29 @@ impl Render {
 
 pub struct InstanceGroups {
     groups: BTreeMap<ModelRef, (Vec<InstanceRaw>, Option<wgpu::Buffer>, usize)>,
+    groups_2d: Vec<(Rect, Option<Material>)>,
+    quad_buffer: wgpu::Buffer,
 }
 impl InstanceGroups {
-    fn new() -> Self {
+    fn new(device: &wgpu::Device) -> Self {
         Self {
             groups: BTreeMap::new(),
+            groups_2d: vec![],
+            quad_buffer: device.create_buffer(&wgpu::BufferDescriptor { 
+                label: Some("descriptor"), 
+                size: Model2DVertex::desc().array_stride * 4, 
+                usage: wgpu::BufferUsage::VERTEX | wgpu::BufferUsage::COPY_DST, 
+                mapped_at_creation: false
+            })
+
         }
     }
     fn clear(&mut self) {
         for (_mr, (irs, _buf, _cap)) in self.groups.iter_mut() {
             irs.clear();
         }
+
+        self.groups_2d.clear();
     }
     fn update_buffers(&mut self, queue: &wgpu::Queue, device: &wgpu::Device, assets: &Assets) {
         for (mr, (irs, buf, cap)) in self.groups.iter_mut() {
@@ -329,6 +424,10 @@ impl InstanceGroups {
             .or_insert((vec![], None, 0))
             .0
             .extend(ir.into_iter())
+    }
+
+    pub fn render_2d(&mut self, rect: Rect, mat: Option<Material>) {
+        self.groups_2d.push((rect, mat));
     }
 }
 

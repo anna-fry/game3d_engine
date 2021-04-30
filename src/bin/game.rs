@@ -11,7 +11,7 @@ use winit::{
 
 // mod model;
 // mod texture;
-use game3d_engine::{Engine, Game, model::{DrawModel, Model, ModelVertex, Vertex}, render::InstanceGroups, run};
+use game3d_engine::{Engine, Game, model::{DrawModel, Model, ModelVertex, Model2DVertex, Vertex}, render::InstanceGroups, run};
 
 use game3d_engine::texture::*;
 
@@ -40,6 +40,7 @@ pub struct Components {
     balls: Vec<Ball>,      // game specific
     statics: Vec<Static>,  // game specific
     // goal: Vec<Goal>,       // game specific
+    statics_2d: Vec<Model2DVertex>,
     physics: Vec<Physics>, // in engine
     models: GameData,    // in engine
     // shapes: Vec<Shape>,    // in engine
@@ -49,6 +50,13 @@ pub struct Components {
 
 impl Components {
     pub fn new(engine: &mut Engine) -> Self{
+
+        let vertices = vec![
+            Model2DVertex { position: [0.0, 0.5], color: [1.0, 0.0, 0.0] },
+            Model2DVertex { position: [-0.5, -0.5], color: [0.0, 1.0, 0.0] },
+            Model2DVertex { position: [0.5, -0.5], color: [0.0, 0.0, 1.0] },
+        ];
+
         let balls = vec![
             Ball {
                 body: Sphere {
@@ -97,6 +105,7 @@ impl Components {
         Components {
             balls: balls,
             statics: walls,
+            statics_2d: vertices,
             physics: physics,
             models: game_data,
             camera: camera,
@@ -123,6 +132,7 @@ impl Systems {
         self.collision_detection.update(&c.statics, &mut c.balls, &mut c.physics);
     }
 }
+
 
 pub struct BallGame {
     components: Components,
@@ -156,6 +166,13 @@ impl Game for BallGame {
         for stat in self.components.statics.iter() {
             stat.render(self.components.models.wall_model, igs);
         }
+
+        let rect = Rect {
+            x: 0.0, y: 0.0, w: 1.0, h: 1.0
+        };
+
+        
+        igs.render_2d(rect, None);
     }
 }
 
