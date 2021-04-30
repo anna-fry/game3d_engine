@@ -1,7 +1,7 @@
 use crate::{events::Events, geom::{Mat4, Plane, Sphere, Vec3}, shapes::Ball};
 use cgmath::{Vector3, prelude::*};
 use winit::event::VirtualKeyCode;
-const DT: f32 = 1.0 / 60.0;
+pub const DT: f32 = 1.0 / 60.0;
 
 pub struct Physics {
     pub velocity: Vec3,
@@ -97,7 +97,7 @@ impl BallMovement {
                 b.play = true;
             }
             if b.play {
-                p.momentum += (self.gravity.apply_force() + self.player_force.apply_force()) * DT;
+                p.momentum += (b.mass*(self.gravity.apply_force() + self.player_force.apply_force())) * DT;
                 let vel = p.momentum / b.mass;
                 b.body.c += vel * DT;
             }

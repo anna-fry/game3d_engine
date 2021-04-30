@@ -1,7 +1,7 @@
 // use super::{Marble, Wall};
 use crate::{geom::*, physics};
 use crate::shapes::*;
-use crate::physics::Physics;
+use crate::physics::{Physics, DT};
 use crate::geom::{Mat4, Plane, Sphere, Vec3};
 const COEFF_R: f32 = 0.5;
 
@@ -63,7 +63,7 @@ impl CollisionDetection {
                 // with it.  We're not exactly modeling a normal force
                 // here but it's something like that.
                 balls[a].body.c += disp;
-                physics[a].apply_impulse(disp * balls[a].mass * COEFF_R);
+                physics[a].momentum += (disp * balls[a].mass * COEFF_R) * DT;
             }
         }
         // That can bump into each other in perfectly elastic collisions!
