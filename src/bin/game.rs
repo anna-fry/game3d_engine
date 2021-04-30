@@ -61,7 +61,7 @@ impl Components {
             Ball {
                 body: Sphere {
                     c: Pos3::new(0.0, 3.0, 0.0),
-                    r: 0.3,
+                    r: 0.1,
                 },
                 mass: 4.0 * 3.14 * (0.3_f32).powf(3.0) / 3.0,
                 play: false
@@ -153,7 +153,7 @@ impl Game for BallGame {
     }
 
     fn update(&mut self, engine: &mut Engine) {
-        self.components.camera.update(&engine.events, &self.components.balls[0]);
+        self.components.camera.update(&engine.events, &mut self.components.balls[0]);
         self.components.camera.update_camera(engine.camera_mut());
         self.systems.process(&engine.events, &mut self.components);
     }
