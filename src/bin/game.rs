@@ -15,7 +15,7 @@ use game3d_engine::{Engine, Game, model::{DrawModel, Model, ModelVertex, Model2D
 
 use game3d_engine::texture::*;
 
-use game3d_engine::shapes::{Ball, Static};
+use game3d_engine::shapes::{Ball, Static, Goal};
 // mod camera;
 use game3d_engine::camera::{Camera};
 // mod camera_control;
@@ -34,12 +34,13 @@ use game3d_engine::events::{Events};
 struct GameData {
     ball_model: game3d_engine::assets::ModelRef,
     wall_model: game3d_engine::assets::ModelRef,
+    goal_model: game3d_engine::assets::ModelRef,
 }
 
 pub struct Components {
     balls: Vec<Ball>,      // game specific
     statics: Vec<Static>,  // game specific
-    // goal: Vec<Goal>,       // game specific
+    goal: Goal,       // game specific
     statics_2d: Vec<Model2DVertex>,
     physics: Vec<Physics>, // in engine
     models: GameData,    // in engine
@@ -73,25 +74,31 @@ impl Components {
             Static {
                 body: Plane {
                     n: Vec3::new(0.0, 1.0, 0.0),
-                    d: 0.0,
+                    d: 2.0,
                 },
                 position: Vec3::new(0.0, -0.025, 0.0)
             },
             Static {
                 body: Plane {
                     n: Vec3::new(0.0, 0.0, -1.0),
-                    d: 0.0,
+                    d: 2.0,
                 },
                 position: Vec3::new(0.0, -0.025, 0.0)
             },
             Static {
                 body: Plane {
                     n: Vec3::new(-1.0, 0.0, 0.0),
-                    d: 0.0,
+                    d: 2.0,
                 },
                 position: Vec3::new(0.0, -0.025, 0.0)
             }
         ];
+        let goal = Goal {
+            body: Box {
+                c: Pos3::new(-0.5, 1.475, -1.0),
+                r: Pos3::new(1.0, 3.0, 2.0),
+            }
+        };
         let physics = vec![
             Physics {
                 velocity: Vec3::zero(),
@@ -101,12 +108,14 @@ impl Components {
         ];
         let game_data = GameData {
             ball_model: engine.load_model("sphere.obj"),
-            wall_model: engine.load_model("floor.obj")
+            wall_model: engine.load_model("floor.obj"),
+            goal_model: engine.load_model("cube.obj"),
         };
         let camera = CameraController::new();
         Components {
             balls: balls,
             statics: walls,
+            goal: goal,
             statics_2d: vertices,
             physics: physics,
             models: game_data,
@@ -168,6 +177,8 @@ impl Game for BallGame {
         for stat in self.components.statics.iter() {
             stat.render(self.components.models.wall_model, igs);
         }
+
+        self.components.goal.render(self.components.models.goal_model, igs);
 
         let rect = Rect {
             x: 0.0, y: 0.0, w: 1.0, h: 1.0

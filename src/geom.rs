@@ -26,6 +26,11 @@ pub struct Rect {
     pub h: f32,
 }
 
+pub struct Box {
+    pub c: Pos3,
+    pub r: Pos3,
+}
+
 /// Are s1 and s2 touching?
 #[allow(dead_code)]
 pub fn touching_sphere_sphere(s1: &Sphere, s2: &Sphere) -> bool {
