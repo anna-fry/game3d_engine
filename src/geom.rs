@@ -59,6 +59,7 @@ pub fn touching_sphere_plane(s: &Sphere, p: &Plane) -> bool {
 pub fn disp_sphere_plane(s: &Sphere, p: &Plane) -> Option<Vec3> {
     // Find the distance of the sphere's center to the plane
     let dist = s.c.dot(p.n) - p.d;
+    println!("dist: {}, r: {}", dist, s.r);
     if dist.abs() <= s.r {
         // If we offset from the sphere position opposite the normal,
         // we'll end up hitting the plane at `dist` units away.  So

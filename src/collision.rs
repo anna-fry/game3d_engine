@@ -12,6 +12,7 @@ pub struct Contact<T: Copy> {
     pub mtv: Vec3,
 }
 
+#[derive(Debug)]
 pub struct Contacts {
     pub wm: Vec<Contact<usize>>,
     pub mm: Vec<Contact<usize>>,
@@ -49,6 +50,7 @@ impl CollisionDetection {
     pub fn restitute(&mut self, statics: &[Static], balls: &mut [Ball], physics: &mut [Physics]) {
         self.contacts.sort();
         // Lots of marbles on the floor...
+        println!("contacts: {:?}", self.contacts.wm);
         for c in self.contacts.wm.iter() {
             let a = c.a;
             let b = c.b;
