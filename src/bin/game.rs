@@ -34,6 +34,7 @@ use game3d_engine::events::{Events};
 struct GameData {
     ball_model: game3d_engine::assets::ModelRef,
     wall_model: game3d_engine::assets::ModelRef,
+    floor_model: game3d_engine::assets::ModelRef,
     goal_model: game3d_engine::assets::ModelRef,
 }
 
@@ -70,7 +71,9 @@ impl Components {
                 play: false
             },
         ];
+        
         let walls = vec![
+            
             Static {
                 body: Plane {
                     n: Vec3::new(0.0, 1.0, 0.0),
@@ -85,6 +88,7 @@ impl Components {
                 },
                 position: Vec3::new(0.0, -0.025, 0.0)
             },
+            
             Static {
                 body: Plane {
                     n: Vec3::new(-1.0, 0.0, 0.0),
@@ -95,7 +99,7 @@ impl Components {
         ];
         let goal = Goal {
             body: Box {
-                c: Pos3::new(-1.5, 0.75, -1.0),
+                c: Pos3::new(-2.0, 1.5, -3.0),
                 //c: Pos3::new(-0.5, 1.475, -1.0),
                 r: Pos3::new(1.0, 3.0, 2.0),
             }
@@ -109,7 +113,8 @@ impl Components {
         ];
         let game_data = GameData {
             ball_model: engine.load_model("sphere.obj"),
-            wall_model: engine.load_model("floor.obj"),
+            wall_model: engine.load_model("wall.obj"),
+            floor_model: engine.load_model("floor.obj"),
             goal_model: engine.load_model("dustbin.obj"),
         };
         let camera = CameraController::new();
@@ -176,7 +181,12 @@ impl Game for BallGame {
         }
 
         for stat in self.components.statics.iter() {
-            stat.render(self.components.models.wall_model, igs);
+            //I just picked the floor value that was different from the rest
+            if stat.body.n.y == 1.0{
+                stat.render(self.components.models.floor_model, igs);
+            }else{
+                stat.render(self.components.models.wall_model, igs);
+            }
         }
 
         self.components.goal.render(self.components.models.goal_model, igs);
