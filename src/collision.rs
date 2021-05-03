@@ -12,6 +12,11 @@ pub struct Contact<T: Copy> {
     pub mtv: Vec3,
 }
 
+pub enum CollisionEffect {
+    Score,
+    None
+}
+
 pub struct Contacts {
     pub wm: Vec<Contact<usize>>,
     pub mm: Vec<Contact<usize>>,
@@ -93,13 +98,20 @@ impl CollisionDetection {
         }
     }
 
-    pub fn update(&mut self, statics: &[Static], balls: &mut [Ball], physics: &mut [Physics]) {
+    pub fn update(&mut self, statics: &[Static], balls: &mut [Ball], goal: &Goal, physics: &mut [Physics]) -> CollisionEffect {
         self.contacts.clear();
-        self.gather_contacts(statics, balls);
+        let effect = self.gather_contacts(statics, balls, goal);
         self.restitute(statics, balls, physics);
+        effect
     }
 
-    pub fn gather_contacts(&mut self, statics: &[Static], dynamics: &[Ball]) {
+    pub fn gather_contacts(&mut self, statics: &[Static], dynamics: &[Ball], goal: &Goal) -> CollisionEffect {
+        let mut effect = CollisionEffect::None;
+        for a in dynamics.iter() {
+            if touching_sphere_box(&a.body, &goal.body) {
+                effect = CollisionEffect::Score;
+            }
+        }
         // collide mobiles against mobiles
         for (ai, a) in dynamics.iter().enumerate() {
             for (bi, b) in dynamics[(ai + 1)..].iter().enumerate() {
@@ -125,5 +137,6 @@ impl CollisionDetection {
                 }
             }
         }
+        effect
     }
 }

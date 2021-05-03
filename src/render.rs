@@ -90,7 +90,7 @@ impl Render {
             });
 
         let camera = Camera {
-            eye: (-20.0, 5.0, -20.0).into(),
+            eye: (-15.0, 5.0, -15.0).into(),
             target: (0.0, 0.0, 0.0).into(),
             up: cgmath::Vector3::unit_y(),
             aspect: sc_desc.width as f32 / sc_desc.height as f32,
