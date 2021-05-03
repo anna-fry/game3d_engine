@@ -95,7 +95,8 @@ impl Components {
         ];
         let goal = Goal {
             body: Box {
-                c: Pos3::new(-0.5, 1.475, -1.0),
+                c: Pos3::new(-1.5, 0.75, -1.0),
+                //c: Pos3::new(-0.5, 1.475, -1.0),
                 r: Pos3::new(1.0, 3.0, 2.0),
             }
         };
@@ -109,7 +110,7 @@ impl Components {
         let game_data = GameData {
             ball_model: engine.load_model("sphere.obj"),
             wall_model: engine.load_model("floor.obj"),
-            goal_model: engine.load_model("cube.obj"),
+            goal_model: engine.load_model("dustbin.obj"),
         };
         let camera = CameraController::new();
         Components {
