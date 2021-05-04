@@ -156,6 +156,7 @@ impl Systems {
                 c.balls[0].play = false;
                 self.ball_movement.player_mag = 0.0;
                 c.physics[0].reset();
+                c.goal.gen_new_loc();
             },
             _ => ()
         }

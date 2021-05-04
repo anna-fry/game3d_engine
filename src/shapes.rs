@@ -1,7 +1,8 @@
 use cgmath::EuclideanSpace;
 use cgmath::prelude::*;
+use rand::Rng;
 use crate::{assets::ModelRef, render::InstanceGroups, render::InstanceRaw};
-use crate::geom::{Mat4, Plane, Sphere, Vec3, Box};
+use crate::geom::{Mat4, Plane, Sphere, Vec3, Box, Pos3};
 
 
 
@@ -75,5 +76,13 @@ impl Goal {
             goal_model,
             self.to_raw()
         );
+    }
+
+    pub fn gen_new_loc(&mut self) {
+        let mut rng = rand::thread_rng();
+        let new_x = rng.gen_range(-12.5..-0.5);
+        let new_y = rng.gen_range(0.5..7.0);
+        let new_z = rng.gen_range(-12.5..-0.5);
+        self.body.c = Pos3::new(new_x, new_y, new_z);
     }
 }
