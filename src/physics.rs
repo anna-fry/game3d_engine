@@ -13,6 +13,11 @@ impl Physics {
     pub fn apply_impulse(&mut self, f: Vec3) {
         self.momentum += f;    
     }
+    pub fn reset(&mut self) {
+        self.velocity = Vec3::zero();
+        self.momentum = Vec3::zero();
+        self.force = Vec3::zero();
+    }
 }
 
 #[derive(Clone, Copy, PartialEq, Debug)]
@@ -39,7 +44,7 @@ impl Force {
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct BallMovement {
     gravity: Force,
-    player_mag: f32,
+    pub player_mag: f32,
 }
 
 impl BallMovement {

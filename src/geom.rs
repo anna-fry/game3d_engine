@@ -74,3 +74,26 @@ pub fn disp_sphere_plane(s: &Sphere, p: &Plane) -> Option<Vec3> {
         None
     }
 }
+
+pub fn sq_dist_point_box(p: Pos3, b: &Box) -> f32 {
+    let mut sq_dist = 0.0;
+    for i in 0..3 {
+        let v = p[i];
+        if v < (b.c[i] - b.r[i]) {
+            sq_dist += ((b.c[i] - b.r[i]) - v) * ((b.c[i] - b.r[i]) - v);
+        }
+        if v > (b.c[i] + b.r[i]) { 
+            sq_dist += (v - (b.c[i] + b.r[i])) * (v - (b.c[i] + b.r[i]));
+        }
+    }
+    sq_dist
+}
+
+pub fn touching_sphere_box(s: &Sphere, b: &Box) -> bool {
+    let sq_dist = sq_dist_point_box(s.c, b);
+    if sq_dist <= s.r * s.r {
+        true
+    } else {
+        false
+    }
+}

@@ -23,11 +23,13 @@ use game3d_engine::camera_control::CameraController;
 
 use game3d_engine::geom::*;
 // mod collision;
-use game3d_engine::collision::CollisionDetection;
+use game3d_engine::collision::{CollisionDetection, CollisionEffect};
 
 use game3d_engine::physics::{Physics, BallMovement};
 
 use game3d_engine::events::{Events};
+
+use winit::event::VirtualKeyCode;
 
 // use game3d_engine::render::{Render};
 
@@ -45,6 +47,7 @@ pub struct Components {
     statics_2d: Vec<Model2DVertex>,
     physics: Vec<Physics>, // in engine
     models: GameData,    // in engine
+    score: usize,
     // shapes: Vec<Shape>,    // in engine
     // events: Events,        // in engine, inputs from keyboard/keys
     camera: CameraController,        // in engine
@@ -100,8 +103,7 @@ impl Components {
         let goal = Goal {
             body: Box {
                 c: Pos3::new(-2.0, 1.5, -3.0),
-                //c: Pos3::new(-0.5, 1.475, -1.0),
-                r: Pos3::new(1.0, 3.0, 2.0),
+                r: Pos3::new(0.5, 0.5, 0.5),
             }
         };
         let physics = vec![
@@ -125,6 +127,7 @@ impl Components {
             statics_2d: vertices,
             physics: physics,
             models: game_data,
+            score: 0,
             camera: camera,
         }
     }
@@ -146,7 +149,21 @@ impl Systems {
     }
     pub fn process(&mut self, events: &Events, c: &mut Components) {
         self.ball_movement.update(events, &mut c.balls, &mut c.physics);
-        self.collision_detection.update(&c.statics, &mut c.balls, &mut c.physics);
+        let effect = self.collision_detection.update(&c.statics, &mut c.balls, &c.goal, &mut c.physics);
+        match effect {
+            game3d_engine::collision::CollisionEffect::Score => {
+                c.score += 1;
+                c.balls[0].play = false;
+                self.ball_movement.player_mag = 0.0;
+                c.physics[0].reset();
+            },
+            _ => ()
+        }
+        if events.key_released(VirtualKeyCode::Return) {
+            c.balls[0].play = false;
+            self.ball_movement.player_mag = 0.0;
+            c.physics[0].reset();
+        }
     }
 }
 
