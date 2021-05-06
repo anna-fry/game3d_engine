@@ -8,6 +8,9 @@ use winit::{
     event_loop::{ControlFlow, EventLoop},
     window::Window,
 };
+use std::{fs::{self, File}, path::Path, rc::Rc};
+use std::io::BufReader;
+use std::io::prelude::*;
 
 // mod model;
 // mod texture;
@@ -217,6 +220,31 @@ impl Game for BallGame {
         // igs.render_2d(rect, None);
     }
 }
+/*
+pub fn save_game(components: &mut Components) -> std::io::Result<()>{
+let serialized = serde_json::to_string(&/*need to figure out what we're saving*/).unwrap();
+    fs::write("saved.txt", serialized);
+
+    let file = File::open("saved.txt")?;
+    let mut buf_reader = BufReader::new(file);
+    let mut contents = String::new();
+    buf_reader.read_to_string(&mut contents)?;
+    Ok(())
+}
+pub fn load_game(state: &mut GameState) -> std::io::Result<()>{
+    if Path::new("saved.txt").exists(){
+        let file = File::open("saved.txt")?;
+        let mut buf_reader = BufReader::new(file);
+        let mut contents = String::new();
+        buf_reader.read_to_string(&mut contents)?;
+        let deserialized: //Change this type Vec<Vec<usize>> = serde_json::from_str(&contents).unwrap();
+        state.model = deserialized;
+    }
+    //include a message that there was not saved gamestate
+    Ok(())
+    
+}
+*/
 
 fn main() {
     env_logger::init();
