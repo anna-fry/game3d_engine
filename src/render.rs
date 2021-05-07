@@ -1,10 +1,13 @@
-use crate::{assets::{Assets, ModelRef}, geom::Rect};
 use crate::camera::Camera;
 use crate::model::*;
 use crate::texture;
 use crate::Game;
+use crate::{
+    assets::{Assets, ModelRef},
+    geom::Rect,
+};
 use cgmath::SquareMatrix;
-use std::collections::BTreeMap;
+use std::{collections::BTreeMap, rc::Rc};
 use wgpu::util::DeviceExt;
 
 use winit::window::Window;
@@ -142,18 +145,18 @@ impl Render {
                 push_constant_ranges: &[],
             });
 
-        let render_2d_pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-            label: Some("Render 2D Pipeline Layout"),
-            bind_group_layouts: &[],
-            push_constant_ranges: &[],
-        });
+        let render_2d_pipeline_layout =
+            device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+                label: Some("Render 2D Pipeline Layout"),
+                bind_group_layouts: &[&texture_bind_group_layout],
+                push_constant_ranges: &[],
+            });
 
         let vs_module = device.create_shader_module(&wgpu::include_spirv!("shader.vert.spv"));
         let fs_module = device.create_shader_module(&wgpu::include_spirv!("shader.frag.spv"));
-       
+
         let vs_2d_module = device.create_shader_module(&wgpu::include_spirv!("shader_2d.vert.spv"));
         let fs_2d_module = device.create_shader_module(&wgpu::include_spirv!("shader_2d.frag.spv"));
-    
 
         let render_3d_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
             label: Some("3D Render Pipeline"),
@@ -197,7 +200,7 @@ impl Render {
             },
         });
 
-        let render_2d_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor{
+        let render_2d_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
             label: Some("2D Render Pipeline"),
             layout: Some(&render_2d_pipeline_layout),
             vertex: wgpu::VertexState {
@@ -337,15 +340,15 @@ impl Render {
             }
 
             render_pass.set_pipeline(&self.render_2d_pipeline);
-            let quad_buffer = &self.instance_groups.quad_buffer;
-            for (rect, _) in self.instance_groups.groups_2d.iter() {
+
+            for (_rect, _power, mat, buffer) in self.instance_groups.groups_2d.iter() {
                 // rect into four model 2d vertices
-                let rect_vertices = [Model2DVertex{ position: [rect.x, rect.y], color: [255.0, 0.0, 0.0]}, Model2DVertex{ position: [rect.x + rect.w, rect.y], color: [0.0, 255.0, 0.0]}, Model2DVertex{ position: [rect.x, rect.y + rect.h], color: [0.0, 0.0, 255.0]}, Model2DVertex{ position: [rect.x + rect.w, rect.y + rect.h], color: [125.0, 0.0, 125.0]}];
-                let vertices = bytemuck::cast_slice(&rect_vertices);
-                self.queue.write_buffer(quad_buffer, 0, vertices);
-                render_pass.set_vertex_buffer(0, quad_buffer.slice(..));
+
+                // println!("{:?}", rect_vertices);
+                // self.queue.write_buffer(quad_buffer, 0, vertices);
+                render_pass.set_vertex_buffer(0, buffer.as_ref().unwrap().slice(..));
+                render_pass.set_bind_group(0, &mat.bind_group, &[]);
                 render_pass.draw(0..4, 0..1);
-                //re
             }
         }
 
@@ -357,21 +360,13 @@ impl Render {
 
 pub struct InstanceGroups {
     groups: BTreeMap<ModelRef, (Vec<InstanceRaw>, Option<wgpu::Buffer>, usize)>,
-    groups_2d: Vec<(Rect, Option<Material>)>,
-    quad_buffer: wgpu::Buffer,
+    groups_2d: Vec<(Rect, Rect, Rc<Material>, Option<wgpu::Buffer>)>,
 }
 impl InstanceGroups {
     fn new(device: &wgpu::Device) -> Self {
         Self {
             groups: BTreeMap::new(),
             groups_2d: vec![],
-            quad_buffer: device.create_buffer(&wgpu::BufferDescriptor { 
-                label: Some("descriptor"), 
-                size: Model2DVertex::desc().array_stride * 4, 
-                usage: wgpu::BufferUsage::VERTEX | wgpu::BufferUsage::COPY_DST, 
-                mapped_at_creation: false
-            })
-
         }
     }
     fn clear(&mut self) {
@@ -396,6 +391,54 @@ impl InstanceGroups {
                 queue.write_buffer(buf.as_ref().unwrap(), 0, bytemuck::cast_slice(irs));
             }
         }
+        // Model2DVertex {
+        //     position: [rect.x, rect.y + rect.h],
+        //     tex_coords: [0.0, 0.0],
+        // },
+        // Model2DVertex {
+        //     position: [rect.x, rect.y],
+        //     tex_coords: [0.0, 1.0],
+        // },
+        // Model2DVertex {
+        //     position: [rect.x + rect.w, rect.y + rect.h],
+        //     tex_coords: [*power, 0.0],
+        // },
+        // Model2DVertex {
+        //     position: [rect.x + rect.w, rect.y],
+        //     tex_coords: [*power, 1.0],
+        // },
+        for (rect, tex_rect, mat, buffer) in self.groups_2d.iter_mut() {
+            let rect_vertices = [
+                Model2DVertex {
+                    position: [rect.x, rect.y + rect.h],
+                    tex_coords: [tex_rect.x, tex_rect.y],
+                },
+                Model2DVertex {
+                    position: [rect.x, rect.y],
+                    tex_coords: [tex_rect.x, tex_rect.y + tex_rect.h],
+                },
+                Model2DVertex {
+                    position: [rect.x + rect.w, rect.y + rect.h],
+                    tex_coords: [tex_rect.x + tex_rect.w, tex_rect.y],
+                },
+                Model2DVertex {
+                    position: [rect.x + rect.w, rect.y],
+                    tex_coords: [tex_rect.x + tex_rect.w, tex_rect.y + tex_rect.h],
+                },
+            ];
+            let vertices = bytemuck::cast_slice(&rect_vertices);
+            if buffer.is_none() {
+                buffer.replace(
+                    device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                        label: Some("2d buffer"),
+                        usage: wgpu::BufferUsage::VERTEX | wgpu::BufferUsage::COPY_DST,
+                        contents: vertices,
+                    }),
+                );
+            } else {
+                queue.write_buffer(buffer.as_ref().unwrap(), 0, vertices);
+            }
+        }
     }
     pub fn render(&mut self, mr: ModelRef, ir: InstanceRaw) {
         self.render_batch(mr, std::iter::once(ir));
@@ -409,8 +452,19 @@ impl InstanceGroups {
             .extend(ir.into_iter())
     }
 
-    pub fn render_2d(&mut self, rect: Rect, mat: Option<Material>) {
-        self.groups_2d.push((rect, mat));
+    pub fn render_bar(&mut self, rect: &Rect, power: f32, mat: &Rc<Material>) {
+        let tex_rect = Rect {
+            x: 0.0,
+            y: 0.0,
+            w: power,
+            h: 1.0
+        };
+
+        self.groups_2d.push((*rect, tex_rect, Rc::clone(mat), None));
+    }
+
+    pub fn render_2d(&mut self, rect: &Rect, tex_rect: &Rect, mat: &Rc<Material>) {
+        self.groups_2d.push((*rect, *tex_rect, Rc::clone(mat), None));
     }
 }
 

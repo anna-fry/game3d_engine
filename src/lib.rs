@@ -1,20 +1,20 @@
 use cgmath::prelude::*;
 use rand;
-use std::{iter, path::Path};
+use std::{iter, path::Path, rc::Rc};
 use wgpu::util::DeviceExt;
 use winit::{
     event::*,
     event_loop::{ControlFlow, EventLoop},
-    window::Window,
     platform::run_return::EventLoopExtRunReturn,
+    window::Window,
 };
 
 //use winit::platform::desktop::EventLoopExtDesktop;
 
+pub mod geom;
 pub mod model;
 pub mod texture;
-pub mod geom;
-use model::{DrawModel, Vertex};
+use model::{DrawModel, Material, Vertex};
 pub mod shapes;
 use shapes::*;
 pub mod camera;
@@ -32,7 +32,6 @@ use render::*;
 
 pub mod events;
 use events::Events;
-
 
 pub mod physics;
 use physics::*;
@@ -63,6 +62,18 @@ impl Engine {
             model,
         )
     }
+
+    pub fn load_material(&mut self, name: &str, tex: impl AsRef<Path>) -> Rc<model::Material> {
+        Material::load(
+            name.to_string(),
+            &self.render.device,
+            &self.render.queue,
+            &self.render.texture_layout,
+            tex,
+        )
+        .unwrap()
+    }
+
     pub fn camera_mut(&mut self) -> &mut camera::Camera {
         &mut self.render.camera
     }
@@ -78,7 +89,6 @@ pub fn run<C, S, G: Game<StaticData = C, SystemData = S>>(
     window_builder: winit::window::WindowBuilder,
     asset_root: &Path,
 ) {
-   
     use std::time::Instant;
     let mut event_loop = EventLoop::new();
     let window = window_builder.build(&event_loop).unwrap();

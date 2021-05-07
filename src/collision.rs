@@ -1,8 +1,8 @@
 // use super::{Marble, Wall};
-use crate::{geom::*, physics};
-use crate::shapes::*;
-use crate::physics::{Physics, DT};
 use crate::geom::{Mat4, Plane, Sphere, Vec3};
+use crate::physics::{Physics, DT};
+use crate::shapes::*;
+use crate::{geom::*, physics};
 const COEFF_R: f32 = 0.5;
 
 #[derive(Clone, Copy, Debug)]
@@ -15,7 +15,7 @@ pub struct Contact<T: Copy> {
 #[derive(Debug)]
 pub enum CollisionEffect {
     Score,
-    None
+    None,
 }
 #[derive(Debug)]
 pub struct Contacts {
@@ -49,13 +49,13 @@ pub struct CollisionDetection {
 impl CollisionDetection {
     pub fn new() -> Self {
         CollisionDetection {
-            contacts: Contacts::new()
+            contacts: Contacts::new(),
         }
     }
     pub fn restitute(&mut self, statics: &[Static], balls: &mut [Ball], physics: &mut [Physics]) {
         self.contacts.sort();
         // Lots of marbles on the floor...
-        println!("contacts: {:?}", self.contacts.wm);
+
         for c in self.contacts.wm.iter() {
             let a = c.a;
             let b = c.b;
@@ -82,32 +82,43 @@ impl CollisionDetection {
             // this kind of technique.
             if let Some(disp) = disp_sphere_sphere(&balls[a].body, &balls[b].body) {
                 let m1 = balls[a].mass;
-                let v1 = physics[a].momentum/m1;
+                let v1 = physics[a].momentum / m1;
                 let m2 = balls[b].mass;
-                let v2 = physics[b].momentum/m2;
-    
-                let v1f = (m1*v1 + 2.0*m2*v2 - m2*v1)/(m1 + m2);
+                let v2 = physics[b].momentum / m2;
+
+                let v1f = (m1 * v1 + 2.0 * m2 * v2 - m2 * v1) / (m1 + m2);
                 let v2f = v1 + v1f - v2;
-    
+
                 let v1r = v1f - v1;
                 let v2r = v2f - v2;
-    
-                balls[a].body.c -= disp/2.0;
-                physics[a].apply_impulse(COEFF_R * m1*v1r);
-                balls[b].body.c += disp/2.0;
-                physics[b].apply_impulse(COEFF_R * m2*v2r);
+
+                balls[a].body.c -= disp / 2.0;
+                physics[a].apply_impulse(COEFF_R * m1 * v1r);
+                balls[b].body.c += disp / 2.0;
+                physics[b].apply_impulse(COEFF_R * m2 * v2r);
             }
         }
     }
 
-    pub fn update(&mut self, statics: &[Static], balls: &mut [Ball], goal: &Goal, physics: &mut [Physics]) -> CollisionEffect {
+    pub fn update(
+        &mut self,
+        statics: &[Static],
+        balls: &mut [Ball],
+        goal: &Goal,
+        physics: &mut [Physics],
+    ) -> CollisionEffect {
         self.contacts.clear();
         let effect = self.gather_contacts(statics, balls, goal);
         self.restitute(statics, balls, physics);
         effect
     }
 
-    pub fn gather_contacts(&mut self, statics: &[Static], dynamics: &[Ball], goal: &Goal) -> CollisionEffect {
+    pub fn gather_contacts(
+        &mut self,
+        statics: &[Static],
+        dynamics: &[Ball],
+        goal: &Goal,
+    ) -> CollisionEffect {
         let mut effect = CollisionEffect::None;
         for a in dynamics.iter() {
             if touching_sphere_box(&a.body, &goal.body) {

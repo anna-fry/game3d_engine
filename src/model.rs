@@ -1,6 +1,6 @@
 use anyhow::*;
-use std::ops::Range;
 use std::path::Path;
+use std::{ops::Range, rc::Rc};
 use wgpu::util::DeviceExt;
 
 use crate::texture;
@@ -21,14 +21,14 @@ pub struct ModelVertex {
 #[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
 pub struct Model2DVertex {
     pub position: [f32; 2],
-    pub color: [f32; 3],
+    pub tex_coords: [f32; 2],
 }
 
 impl Vertex for Model2DVertex {
     fn desc<'a>() -> wgpu::VertexBufferLayout<'a> {
         use std::mem;
         wgpu::VertexBufferLayout {
-            array_stride: mem::size_of::<ModelVertex>() as wgpu::BufferAddress,
+            array_stride: mem::size_of::<Model2DVertex>() as wgpu::BufferAddress,
             step_mode: wgpu::InputStepMode::Vertex,
             attributes: &[
                 wgpu::VertexAttribute {
@@ -39,7 +39,7 @@ impl Vertex for Model2DVertex {
                 wgpu::VertexAttribute {
                     offset: mem::size_of::<[f32; 2]>() as wgpu::BufferAddress,
                     shader_location: 1,
-                    format: wgpu::VertexFormat::Float3,
+                    format: wgpu::VertexFormat::Float2,
                 },
             ],
         }
@@ -73,10 +73,53 @@ impl Vertex for ModelVertex {
     }
 }
 
+pub struct AnimMaterial {
+    pub name: String,
+    pub diffuse_texture: texture::Texture,
+    pub bind_group: wgpu::BindGroup,
+}
+
+// impl AnimMaterial {
+//     pub fn
+// }
+
 pub struct Material {
     pub name: String,
     pub diffuse_texture: texture::Texture,
     pub bind_group: wgpu::BindGroup,
+}
+
+impl Material {
+    pub fn load<P: AsRef<Path>>(
+        name: String,
+        device: &wgpu::Device,
+        queue: &wgpu::Queue,
+        layout: &wgpu::BindGroupLayout,
+        path: P,
+    ) -> Result<Rc<Self>> {
+        let diffuse_texture = texture::Texture::load(device, queue, path)?;
+
+        let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+            layout,
+            entries: &[
+                wgpu::BindGroupEntry {
+                    binding: 0,
+                    resource: wgpu::BindingResource::TextureView(&diffuse_texture.view),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 1,
+                    resource: wgpu::BindingResource::Sampler(&diffuse_texture.sampler),
+                },
+            ],
+            label: None,
+        });
+
+        Ok(Rc::new(Material {
+            name: name,
+            diffuse_texture: diffuse_texture,
+            bind_group: bind_group,
+        }))
+    }
 }
 
 pub struct Mesh {

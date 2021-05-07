@@ -1,7 +1,7 @@
 use cgmath::prelude::*;
 // use game3d_engine::model;
 use rand;
-use std::iter;
+use std::{iter, rc::Rc};
 use wgpu::util::DeviceExt;
 use winit::{
     event::*,
@@ -11,13 +11,17 @@ use winit::{
 
 // mod model;
 // mod texture;
-use game3d_engine::{Engine, Game, model::{DrawModel, Model, ModelVertex, Model2DVertex, Vertex}, render::InstanceGroups, run};
+use game3d_engine::{
+    model::{DrawModel, Material, Model, Model2DVertex, ModelVertex, Vertex},
+    render::InstanceGroups,
+    run, Engine, Game,
+};
 
 use game3d_engine::texture::*;
 
-use game3d_engine::shapes::{Ball, Static, Goal};
+use game3d_engine::shapes::{Ball, Goal, Static};
 // mod camera;
-use game3d_engine::camera::{Camera};
+use game3d_engine::camera::Camera;
 // mod camera_control;
 use game3d_engine::camera_control::CameraController;
 
@@ -25,9 +29,9 @@ use game3d_engine::geom::*;
 // mod collision;
 use game3d_engine::collision::{CollisionDetection, CollisionEffect};
 
-use game3d_engine::physics::{Physics, BallMovement};
+use game3d_engine::physics::{BallMovement, Physics};
 
-use game3d_engine::events::{Events};
+use game3d_engine::events::Events;
 
 use winit::event::VirtualKeyCode;
 
@@ -41,78 +45,91 @@ struct GameData {
 }
 
 pub struct Components {
-    balls: Vec<Ball>,      // game specific
-    statics: Vec<Static>,  // game specific
-    goal: Goal,       // game specific
-    statics_2d: Vec<Model2DVertex>,
+    balls: Vec<Ball>,     // game specific
+    statics: Vec<Static>, // game specific
+    goal: Goal,           // game specific
+    meter: Vec<(Rect, f32, Rc<Material>)>,
     physics: Vec<Physics>, // in engine
-    models: GameData,    // in engine
+    models: GameData,      // in engine
     score: usize,
     // shapes: Vec<Shape>,    // in engine
     // events: Events,        // in engine, inputs from keyboard/keys
-    camera: CameraController,        // in engine
+    camera: CameraController, // in engine
 }
 
 impl Components {
-    pub fn new(engine: &mut Engine) -> Self{
+    pub fn new(engine: &mut Engine) -> Self {
+        let empty_meter = engine.load_material("empty-meter", "content/empty-meter.png");
+        let full_meter = engine.load_material("full-meter", "content/full-meter.png");
 
-        let vertices = vec![
-            Model2DVertex { position: [0.0, 0.5], color: [1.0, 0.0, 0.0] },
-            Model2DVertex { position: [-0.5, -0.5], color: [0.0, 1.0, 0.0] },
-            Model2DVertex { position: [0.5, -0.5], color: [0.0, 0.0, 1.0] },
-        ];
-
-        let balls = vec![
-            Ball {
-                body: Sphere {
-                    c: Pos3::new(-20.0, 5.0, -20.0),
-                    r: 0.1,
+        let meter = vec![
+            (
+                Rect {
+                    x: -0.8,
+                    y: -0.8,
+                    w: 0.6,
+                    h: 0.2,
                 },
-                pitch: 0.0,
-                yaw: 0.0,
-                mass: 4.0 * 3.14 * (0.3_f32).powf(3.0) / 3.0,
-                play: false
-            },
+                1.0,
+                empty_meter,
+            ),
+            (
+                Rect {
+                    x: -0.8,
+                    y: -0.8,
+                    w: 0.0,
+                    h: 0.2,
+                },
+                0.0,
+                full_meter,
+            ),
         ];
-        
+
+        let balls = vec![Ball {
+            body: Sphere {
+                c: Pos3::new(-20.0, 5.0, -20.0),
+                r: 0.1,
+            },
+            pitch: 0.0,
+            yaw: 0.0,
+            mass: 4.0 * 3.14 * (0.3_f32).powf(3.0) / 3.0,
+            play: false,
+        }];
+
         let walls = vec![
-            
             Static {
                 body: Plane {
                     n: Vec3::new(0.0, 1.0, 0.0),
                     d: 2.0,
                 },
-                position: Vec3::new(0.0, -0.025, 0.0)
+                position: Vec3::new(0.0, -0.025, 0.0),
             },
             Static {
                 body: Plane {
                     n: Vec3::new(0.0, 0.0, -1.0),
                     d: 2.0,
                 },
-                position: Vec3::new(0.0, -0.025, 0.0)
+                position: Vec3::new(0.0, -0.025, 0.0),
             },
-            
             Static {
                 body: Plane {
                     n: Vec3::new(-1.0, 0.0, 0.0),
                     d: 2.0,
                 },
-                position: Vec3::new(0.0, -0.025, 0.0)
-            }
+                position: Vec3::new(0.0, -0.025, 0.0),
+            },
         ];
         let goal = Goal {
             body: Box {
                 c: Pos3::new(-2.0, 1.5, -3.0),
                 r: Pos3::new(0.5, 0.5, 0.5),
-            }
+            },
         };
-        let physics = vec![
-            Physics {
-                velocity: Vec3::zero(),
-                momentum: Vec3::zero(),
-                force: Vec3::zero(),
-            }
-        ];
+        let physics = vec![Physics {
+            velocity: Vec3::zero(),
+            momentum: Vec3::zero(),
+            force: Vec3::zero(),
+        }];
         let game_data = GameData {
             ball_model: engine.load_model("sphere.obj"),
             wall_model: engine.load_model("wall.obj"),
@@ -124,7 +141,7 @@ impl Components {
             balls: balls,
             statics: walls,
             goal: goal,
-            statics_2d: vertices,
+            meter: meter,
             physics: physics,
             models: game_data,
             score: 0,
@@ -133,11 +150,10 @@ impl Components {
     }
 }
 
-
 pub struct Systems {
-    ball_movement: BallMovement,             // game specific
+    ball_movement: BallMovement, // game specific
     collision_detection: CollisionDetection, // in engine
-    // render: Render,                          // in engine
+                                 // render: Render,                          // in engine
 }
 
 impl Systems {
@@ -148,25 +164,31 @@ impl Systems {
         }
     }
     pub fn process(&mut self, events: &Events, c: &mut Components) {
-        self.ball_movement.update(events, &mut c.balls, &mut c.physics);
-        let effect = self.collision_detection.update(&c.statics, &mut c.balls, &c.goal, &mut c.physics);
+        self.ball_movement
+            .update(events, &mut c.balls, &mut c.meter[1], &mut c.physics);
+        let effect =
+            self.collision_detection
+                .update(&c.statics, &mut c.balls, &c.goal, &mut c.physics);
         match effect {
             game3d_engine::collision::CollisionEffect::Score => {
                 c.score += 1;
                 c.balls[0].play = false;
                 self.ball_movement.player_mag = 0.0;
                 c.physics[0].reset();
-            },
-            _ => ()
+                c.meter[1].0.w = 0.0;
+                c.meter[1].1 = 0.0;
+            }
+            _ => (),
         }
         if events.key_released(VirtualKeyCode::Return) {
             c.balls[0].play = false;
             self.ball_movement.player_mag = 0.0;
             c.physics[0].reset();
+            c.meter[1].0.w = 0.0;
+            c.meter[1].1 = 0.0;
         }
     }
 }
-
 
 pub struct BallGame {
     components: Components,
@@ -176,7 +198,7 @@ pub struct BallGame {
 impl Game for BallGame {
     type StaticData = Components;
     type SystemData = Systems;
-    fn start(engine: &mut Engine) -> Self { 
+    fn start(engine: &mut Engine) -> Self {
         let components = Components::new(engine);
         let systems = Systems::new();
         let game = BallGame {
@@ -187,33 +209,35 @@ impl Game for BallGame {
     }
 
     fn update(&mut self, engine: &mut Engine) {
-        self.components.camera.update(&engine.events, &mut self.components.balls[0]);
+        self.components
+            .camera
+            .update(&engine.events, &mut self.components.balls[0]);
         self.components.camera.update_camera(engine.camera_mut());
         self.systems.process(&engine.events, &mut self.components);
     }
 
     fn render(&self, igs: &mut InstanceGroups) {
-        for ball in  self.components.balls.iter() {
+        for ball in self.components.balls.iter() {
             ball.render(self.components.models.ball_model, igs);
         }
 
         for stat in self.components.statics.iter() {
             //I just picked the floor value that was different from the rest
-            if stat.body.n.y == 1.0{
+            if stat.body.n.y == 1.0 {
                 stat.render(self.components.models.floor_model, igs);
-            }else{
+            } else {
                 stat.render(self.components.models.wall_model, igs);
             }
         }
 
-        self.components.goal.render(self.components.models.goal_model, igs);
+        self.components
+            .goal
+            .render(self.components.models.goal_model, igs);
 
-        let rect = Rect {
-            x: 0.0, y: 0.0, w: 1.0, h: 1.0
-        };
 
-        
-        // igs.render_2d(rect, None);
+        for (rect, power, mat) in self.components.meter.iter() {
+            igs.render_bar(&rect, *power, mat);
+        }
     }
 }
 

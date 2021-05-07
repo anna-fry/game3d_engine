@@ -17,12 +17,11 @@ pub struct Plane {
     pub d: f32,
 }
 
-
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Rect {
     pub x: f32,
     pub y: f32,
-    pub w: f32, 
+    pub w: f32,
     pub h: f32,
 }
 
@@ -64,7 +63,7 @@ pub fn touching_sphere_plane(s: &Sphere, p: &Plane) -> bool {
 pub fn disp_sphere_plane(s: &Sphere, p: &Plane) -> Option<Vec3> {
     // Find the distance of the sphere's center to the plane
     let dist = s.c.dot(p.n) - p.d;
-    println!("dist: {}, r: {}", dist, s.r);
+
     if dist.abs() <= s.r {
         // If we offset from the sphere position opposite the normal,
         // we'll end up hitting the plane at `dist` units away.  So
@@ -82,7 +81,7 @@ pub fn sq_dist_point_box(p: Pos3, b: &Box) -> f32 {
         if v < (b.c[i] - b.r[i]) {
             sq_dist += ((b.c[i] - b.r[i]) - v) * ((b.c[i] - b.r[i]) - v);
         }
-        if v > (b.c[i] + b.r[i]) { 
+        if v > (b.c[i] + b.r[i]) {
             sq_dist += (v - (b.c[i] + b.r[i])) * (v - (b.c[i] + b.r[i]));
         }
     }
