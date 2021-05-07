@@ -1,7 +1,10 @@
-use crate::geom::{Box, Mat4, Plane, Sphere, Vec3};
-use crate::{assets::ModelRef, render::InstanceGroups, render::InstanceRaw};
 use cgmath::prelude::*;
 use cgmath::EuclideanSpace;
+use rand::Rng;
+use crate::{assets::ModelRef, render::InstanceGroups, render::InstanceRaw};
+use crate::geom::{Mat4, Plane, Sphere, Vec3, Box, Pos3};
+
+
 
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Ball {
@@ -63,5 +66,13 @@ impl Goal {
 
     pub fn render(&self, goal_model: ModelRef, igs: &mut InstanceGroups) {
         igs.render(goal_model, self.to_raw());
+    }
+
+    pub fn gen_new_loc(&mut self) {
+        let mut rng = rand::thread_rng();
+        let new_x = rng.gen_range(-12.5..-0.5);
+        let new_y = rng.gen_range(0.5..7.0);
+        let new_z = rng.gen_range(-12.5..-0.5);
+        self.body.c = Pos3::new(new_x, new_y, new_z);
     }
 }
