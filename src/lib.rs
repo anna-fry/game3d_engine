@@ -1,5 +1,6 @@
 use cgmath::prelude::*;
 use rand;
+use rodio::{OutputStreamHandle, Source, SpatialSink};
 use std::{iter, path::Path, rc::Rc};
 use wgpu::util::DeviceExt;
 use winit::{
@@ -36,7 +37,11 @@ use events::Events;
 pub mod physics;
 use physics::*;
 
+use crate::music::Sound;
+
 pub mod text;
+
+pub mod music;
 
 
 pub const DT: f32 = 1.0 / 60.0;
@@ -54,6 +59,7 @@ pub struct Engine {
     pub assets: Assets,
     render: Render,
     pub events: Events,
+    pub sink: SpatialSink,
 }
 
 impl Engine {
@@ -97,6 +103,8 @@ pub fn run<C, S, G: Game<StaticData = C, SystemData = S>>(
     let window = window_builder.build(&event_loop).unwrap();
     let assets = Assets::new(asset_root);
     use futures::executor::block_on;
+    let (_stream, stream_handle) = rodio::OutputStream::try_default().unwrap();
+    let sink = Sound::spatial_sink(&stream_handle, [-2.0, 1.5, -3.0], [-19.0, 5.0, -20.0], [-21.0, 5.0, -20.0]);
     let render = block_on(Render::new(&window));
     let events = Events::default();
     let mut engine = Engine {
@@ -104,9 +112,11 @@ pub fn run<C, S, G: Game<StaticData = C, SystemData = S>>(
         render,
         events,
         frame: 0,
+        sink
     };
 
     let mut game = G::start(&mut engine);
+    
     // How many unsimulated frames have we saved up?
     let mut available_time: f32 = 0.0;
     let mut since = Instant::now();

@@ -1,7 +1,7 @@
 // GitHub User sinesc
 // https://github.com/RustAudio/rodio/issues/141#issuecomment-383371609
 
-use rodio::{self, OutputStreamHandle, Sink};
+use rodio::{self, OutputStreamHandle, Sink, SpatialSink};
 use std::convert::AsRef;
 use std::{
     io::{self, Read},
@@ -34,5 +34,9 @@ impl Sound {
 
     pub fn sink(stream_handle: &OutputStreamHandle) -> Sink {
         rodio::Sink::try_new(&stream_handle).unwrap()
+    }
+
+    pub fn spatial_sink(stream_handle: &OutputStreamHandle, emitter_position: [f32; 3], left_ear: [f32; 3], right_ear: [f32; 3]) -> SpatialSink {
+        rodio::SpatialSink::try_new(&stream_handle, emitter_position, left_ear, right_ear).unwrap()
     }
 }

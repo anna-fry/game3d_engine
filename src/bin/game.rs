@@ -1,6 +1,7 @@
 use cgmath::prelude::*;
 // use game3d_engine::model;
 use rand;
+use rodio::{Sink, Source, SpatialSink};
 use std::{iter, rc::Rc};
 use wgpu::util::DeviceExt;
 use winit::{
@@ -14,7 +15,7 @@ use std::io::prelude::*;
 
 // mod model;
 // mod texture;
-use game3d_engine::{Engine, Game, model::{DrawModel, Material, Model, Model2DVertex, ModelVertex, Vertex}, render::InstanceGroups, run, text::Sentence};
+use game3d_engine::{Engine, Game, model::{DrawModel, Material, Model, Model2DVertex, ModelVertex, Vertex}, music::Sound, render::InstanceGroups, run, text::Sentence};
 
 use game3d_engine::texture::*;
 
@@ -56,7 +57,8 @@ pub struct Components {
     physics: Vec<Physics>, // in engine
     models: GameData,      // in engine
     score: usize,
-    
+    // sink: SpatialSink,
+    sounds: Vec<(Sound, bool)>,
     text: Vec<Sentence>,
     text_mat: Rc<Material>,
     // shapes: Vec<Shape>,    // in engine
@@ -150,8 +152,10 @@ impl Components {
         let text = vec![power_text];
 
         let camera = CameraController::new();
-
-
+        
+        let hammer_sound = Sound::load("content/ball_collide.mp3").unwrap();
+        
+        let sounds = vec![(hammer_sound, true)];
         Components {
             balls: balls,
             statics: walls,
@@ -160,6 +164,8 @@ impl Components {
             physics: physics,
             models: game_data,
             score: 0,
+            // sink: engine.sink,
+            sounds: sounds,
             text: text,
             text_mat: text_mat,
             camera: camera,
@@ -181,12 +187,14 @@ impl Systems {
             collision_detection: CollisionDetection::new(),
         }
     }
-    pub fn process(&mut self, events: &Events, c: &mut Components) {
+    pub fn process(&mut self, events: &Events, c: &mut Components, sink: &SpatialSink) {
         self.ball_movement
             .update(events, &mut c.balls, &mut c.meter[1], &mut c.physics);
         let effect =
             self.collision_detection
                 .update(&c.statics, &mut c.balls, &c.goal, &mut c.physics);
+
+        // println!("effect: {:?}", effect);
         match effect {
             game3d_engine::collision::CollisionEffect::Score => {
                 c.score += 1;
@@ -196,8 +204,24 @@ impl Systems {
                 c.meter[1].0.w = 0.0;
                 c.meter[1].1 = 0.0;
                 c.goal.gen_new_loc();
+                c.sounds[0].1 = true;
             },
-            _ => ()
+            game3d_engine::collision::CollisionEffect::WallCollision => {
+                // println!("make it here");
+                if c.sounds[0].1 {
+
+                    let pos = c.balls[0].body.c;
+                    // c.sink.set_volume(2.0);
+                    sink.set_emitter_position([pos.x, pos.y, pos.z]);
+                    sink.append(c.sounds[0].0.decoder());
+                    c.sounds[0].1 = false;
+                }
+
+                // println!("make it past append");
+            }
+            
+            
+            _ => {}
         }
         if events.key_released(VirtualKeyCode::Return) {
             c.balls[0].play = false;
@@ -205,6 +229,7 @@ impl Systems {
             c.physics[0].reset();
             c.meter[1].0.w = 0.0;
             c.meter[1].1 = 0.0;
+            c.sounds[0].1 = true;
         }
     }
 }
@@ -246,7 +271,7 @@ impl Game for BallGame {
             .camera
             .update(&engine.events, &mut self.components.balls[0]);
             self.components.camera.update_camera(engine.camera_mut());
-            self.systems.process(&engine.events, &mut self.components);
+            self.systems.process(&engine.events, &mut self.components, &engine.sink);
             }
             Mode::EndGame => {}
         }

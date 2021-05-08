@@ -15,6 +15,8 @@ pub struct Contact<T: Copy> {
 #[derive(Debug)]
 pub enum CollisionEffect {
     Score,
+    WallCollision,
+    BallCollision,
     None,
 }
 #[derive(Debug)]
@@ -120,11 +122,7 @@ impl CollisionDetection {
         goal: &Goal,
     ) -> CollisionEffect {
         let mut effect = CollisionEffect::None;
-        for a in dynamics.iter() {
-            if touching_sphere_box(&a.body, &goal.body) {
-                effect = CollisionEffect::Score;
-            }
-        }
+        
         // collide mobiles against mobiles
         for (ai, a) in dynamics.iter().enumerate() {
             for (bi, b) in dynamics[(ai + 1)..].iter().enumerate() {
@@ -135,6 +133,7 @@ impl CollisionDetection {
                         b: bi,
                         mtv: disp,
                     });
+                    effect = CollisionEffect::BallCollision;
                 }
             }
         }
@@ -147,9 +146,17 @@ impl CollisionDetection {
                         b: bi,
                         mtv: disp,
                     });
+                    effect = CollisionEffect::WallCollision;
                 }
             }
         }
+
+        for a in dynamics.iter() {
+            if touching_sphere_box(&a.body, &goal.body) {
+                effect = CollisionEffect::Score;
+            }
+        }
+
         effect
     }
 }
