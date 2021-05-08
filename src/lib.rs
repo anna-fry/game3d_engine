@@ -36,6 +36,9 @@ use events::Events;
 pub mod physics;
 use physics::*;
 
+pub mod text;
+
+
 pub const DT: f32 = 1.0 / 60.0;
 
 pub trait Game: Sized {

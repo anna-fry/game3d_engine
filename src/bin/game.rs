@@ -8,17 +8,13 @@ use winit::{
     event_loop::{ControlFlow, EventLoop},
     window::Window,
 };
-use std::{fs::{self, File}, path::Path, rc::Rc};
+use std::{fs::{self, File}, path::Path};
 use std::io::BufReader;
 use std::io::prelude::*;
 
 // mod model;
 // mod texture;
-use game3d_engine::{
-    model::{DrawModel, Material, Model, Model2DVertex, ModelVertex, Vertex},
-    render::InstanceGroups,
-    run, Engine, Game,
-};
+use game3d_engine::{Engine, Game, model::{DrawModel, Material, Model, Model2DVertex, ModelVertex, Vertex}, render::InstanceGroups, run, text::Sentence};
 
 use game3d_engine::texture::*;
 
@@ -55,6 +51,9 @@ pub struct Components {
     physics: Vec<Physics>, // in engine
     models: GameData,      // in engine
     score: usize,
+    
+    text: Vec<Sentence>,
+    text_mat: Rc<Material>,
     // shapes: Vec<Shape>,    // in engine
     // events: Events,        // in engine, inputs from keyboard/keys
     camera: CameraController, // in engine
@@ -64,6 +63,7 @@ impl Components {
     pub fn new(engine: &mut Engine) -> Self {
         let empty_meter = engine.load_material("empty-meter", "content/empty-meter.png");
         let full_meter = engine.load_material("full-meter", "content/full-meter.png");
+        let text_mat = engine.load_material("ascii", "content/ascii.png");
 
         let meter = vec![
             (
@@ -139,7 +139,13 @@ impl Components {
             floor_model: engine.load_model("floor.obj"),
             goal_model: engine.load_model("dustbin.obj"),
         };
+
+        let power_text = Sentence::text_to_sentence("Power", [-0.8, -0.55]);
+        let text = vec![power_text];
+
         let camera = CameraController::new();
+
+
         Components {
             balls: balls,
             statics: walls,
@@ -148,6 +154,8 @@ impl Components {
             physics: physics,
             models: game_data,
             score: 0,
+            text: text,
+            text_mat: text_mat,
             camera: camera,
         }
     }
@@ -242,6 +250,13 @@ impl Game for BallGame {
         for (rect, power, mat) in self.components.meter.iter() {
             igs.render_bar(&rect, *power, mat);
         }
+
+        for sentence in self.components.text.iter() {
+            sentence.draw_sentence(igs, &self.components.text_mat);
+        }
+
+        let score_sentence = Sentence::text_to_sentence(&("Score: ".to_string() + &self.components.score.to_string()), [-0.2, 0.9]);
+        score_sentence.draw_sentence(igs, &self.components.text_mat);
     }
 }
 /*

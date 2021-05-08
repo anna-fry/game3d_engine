@@ -342,10 +342,6 @@ impl Render {
             render_pass.set_pipeline(&self.render_2d_pipeline);
 
             for (_rect, _power, mat, buffer) in self.instance_groups.groups_2d.iter() {
-                // rect into four model 2d vertices
-
-                // println!("{:?}", rect_vertices);
-                // self.queue.write_buffer(quad_buffer, 0, vertices);
                 render_pass.set_vertex_buffer(0, buffer.as_ref().unwrap().slice(..));
                 render_pass.set_bind_group(0, &mat.bind_group, &[]);
                 render_pass.draw(0..4, 0..1);
@@ -391,23 +387,8 @@ impl InstanceGroups {
                 queue.write_buffer(buf.as_ref().unwrap(), 0, bytemuck::cast_slice(irs));
             }
         }
-        // Model2DVertex {
-        //     position: [rect.x, rect.y + rect.h],
-        //     tex_coords: [0.0, 0.0],
-        // },
-        // Model2DVertex {
-        //     position: [rect.x, rect.y],
-        //     tex_coords: [0.0, 1.0],
-        // },
-        // Model2DVertex {
-        //     position: [rect.x + rect.w, rect.y + rect.h],
-        //     tex_coords: [*power, 0.0],
-        // },
-        // Model2DVertex {
-        //     position: [rect.x + rect.w, rect.y],
-        //     tex_coords: [*power, 1.0],
-        // },
-        for (rect, tex_rect, mat, buffer) in self.groups_2d.iter_mut() {
+        
+        for (rect, tex_rect, _mat, buffer) in self.groups_2d.iter_mut() {
             let rect_vertices = [
                 Model2DVertex {
                     position: [rect.x, rect.y + rect.h],
