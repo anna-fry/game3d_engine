@@ -35,6 +35,11 @@ use game3d_engine::events::Events;
 use winit::event::VirtualKeyCode;
 
 // use game3d_engine::render::{Render};
+enum Mode {
+    TitleScreen,
+    GamePlay,
+    EndGame,
+}
 
 struct GameData {
     ball_model: game3d_engine::assets::ModelRef,
@@ -57,6 +62,7 @@ pub struct Components {
     // shapes: Vec<Shape>,    // in engine
     // events: Events,        // in engine, inputs from keyboard/keys
     camera: CameraController, // in engine
+    mode: Mode
 }
 
 impl Components {
@@ -157,6 +163,7 @@ impl Components {
             text: text,
             text_mat: text_mat,
             camera: camera,
+            mode: Mode::TitleScreen
         }
     }
 }
@@ -221,11 +228,30 @@ impl Game for BallGame {
     }
 
     fn update(&mut self, engine: &mut Engine) {
-        self.components
+        match self.components.mode{
+            Mode::TitleScreen => {
+                //TODO: make a title page; can still press return tho
+                if engine.events.key_pressed(VirtualKeyCode::Return) == true {
+                    self.components.mode = Mode::GamePlay;
+                } else if engine.events.key_pressed(VirtualKeyCode::L){
+                    load_game(&mut self.components);
+                    self.components.mode = Mode::GamePlay;
+                }
+            }
+            Mode::GamePlay => {
+                if engine.events.key_held(VirtualKeyCode::P){
+                    save_game(&mut self.components);
+                }
+                self.components
             .camera
             .update(&engine.events, &mut self.components.balls[0]);
-        self.components.camera.update_camera(engine.camera_mut());
-        self.systems.process(&engine.events, &mut self.components);
+            self.components.camera.update_camera(engine.camera_mut());
+            self.systems.process(&engine.events, &mut self.components);
+            }
+            Mode::EndGame => {}
+        }
+        
+        
     }
 
     fn render(&self, igs: &mut InstanceGroups) {
@@ -259,9 +285,9 @@ impl Game for BallGame {
         score_sentence.draw_sentence(igs, &self.components.text_mat);
     }
 }
-/*
+
 pub fn save_game(components: &mut Components) -> std::io::Result<()>{
-let serialized = serde_json::to_string(&/*need to figure out what we're saving*/).unwrap();
+let serialized = serde_json::to_string(&components.score).unwrap();
     fs::write("saved.txt", serialized);
 
     let file = File::open("saved.txt")?;
@@ -270,20 +296,20 @@ let serialized = serde_json::to_string(&/*need to figure out what we're saving*/
     buf_reader.read_to_string(&mut contents)?;
     Ok(())
 }
-pub fn load_game(state: &mut GameState) -> std::io::Result<()>{
+pub fn load_game(components: &mut Components) -> std::io::Result<()>{
     if Path::new("saved.txt").exists(){
         let file = File::open("saved.txt")?;
         let mut buf_reader = BufReader::new(file);
         let mut contents = String::new();
         buf_reader.read_to_string(&mut contents)?;
-        let deserialized: //Change this type Vec<Vec<usize>> = serde_json::from_str(&contents).unwrap();
-        state.model = deserialized;
+        let deserialized: usize = serde_json::from_str(&contents).unwrap();
+        components.score = deserialized;
     }
     //include a message that there was not saved gamestate
     Ok(())
     
 }
-*/
+
 
 fn main() {
     env_logger::init();
