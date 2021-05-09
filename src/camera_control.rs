@@ -2,7 +2,6 @@ use crate::camera::Camera;
 use crate::events::Events;
 use crate::geom::*;
 use crate::shapes::Ball;
-use cgmath::InnerSpace;
 use winit::event::*;
 
 pub struct CameraController {

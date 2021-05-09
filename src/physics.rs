@@ -1,7 +1,7 @@
 use std::rc::Rc;
 
-use crate::{events::Events, geom::{Mat4, Plane, Rect, Sphere, Vec3}, model::Material, shapes::Ball};
-use cgmath::{prelude::*, Vector3};
+use crate::{events::Events, geom::{Rect, Vec3}, model::Material, shapes::Ball};
+use cgmath::{prelude::*};
 use winit::event::VirtualKeyCode;
 pub const DT: f32 = 1.0 / 60.0;
 

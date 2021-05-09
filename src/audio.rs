@@ -1,8 +1,6 @@
 use std::{sync::mpsc::{self, Sender, Receiver}};
 use std::thread;
 
-use rodio::{SpatialSink};
-
 use crate::geom::{Pos3};
 use crate::music::Sound;
 

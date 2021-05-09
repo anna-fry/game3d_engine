@@ -1,33 +1,33 @@
 use cgmath::prelude::*;
 // use game3d_engine::model;
-use rand;
-use rodio::{Sink, Source, SpatialSink};
-use std::{iter, rc::Rc};
-use wgpu::util::DeviceExt;
-use winit::{
-    event::*,
-    event_loop::{ControlFlow, EventLoop},
-    window::Window,
-};
+
+
+use std::rc::Rc;
+
+
+
+
+
+
 use std::{fs::{self, File}, path::Path};
 use std::io::BufReader;
 use std::io::prelude::*;
 
-// mod model;
-// mod texture;
-use game3d_engine::{Engine, Game, audio::Audio, model::{DrawModel, Material, Model, Model2DVertex, ModelVertex, Vertex}, music::Sound, render::InstanceGroups, run, text::Sentence};
 
-use game3d_engine::texture::*;
+
+use game3d_engine::{Engine, Game, audio::Audio, model::Material, music::Sound, render::InstanceGroups, text::Sentence};
+
+
 
 use game3d_engine::shapes::{Ball, Goal, Static};
-// mod camera;
-use game3d_engine::camera::Camera;
-// mod camera_control;
+
+
+
 use game3d_engine::camera_control::CameraController;
 
 use game3d_engine::geom::*;
-// mod collision;
-use game3d_engine::collision::{CollisionDetection, CollisionEffect};
+
+use game3d_engine::collision::{CollisionDetection};
 
 use game3d_engine::physics::{BallMovement, Physics};
 
@@ -35,7 +35,7 @@ use game3d_engine::events::Events;
 
 use winit::event::VirtualKeyCode;
 
-// use game3d_engine::render::{Render};
+
 enum Mode {
     TitleScreen,
     GamePlay,
@@ -61,8 +61,6 @@ pub struct Components {
     text: Vec<Sentence>,
     text_mat: Rc<Material>,
     menu: (Rect, Rect, Rc<Material>),
-    // shapes: Vec<Shape>,    // in engine
-    // events: Events,        // in engine, inputs from keyboard/keys
     camera: CameraController, // in engine
     mode: Mode
 }
@@ -178,7 +176,6 @@ impl Components {
 pub struct Systems {
     ball_movement: BallMovement, // game specific
     collision_detection: CollisionDetection, // in engine
-                                 // render: Render,                          // in engine
 }
 
 impl Systems {
@@ -268,6 +265,7 @@ impl Game for BallGame {
             Mode::GamePlay => {
                 if engine.events.key_held(VirtualKeyCode::S){
                     save_game(&mut self.components);
+                   
                 }
                 self.components
                     .camera

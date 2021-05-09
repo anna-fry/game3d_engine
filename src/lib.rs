@@ -1,13 +1,12 @@
-use cgmath::prelude::*;
-use rand;
+
 // use rodio;
-use std::{iter, path::Path, rc::Rc};
-use wgpu::util::DeviceExt;
+use std::{path::Path, rc::Rc};
+
 use winit::{
     event::*,
     event_loop::{ControlFlow, EventLoop},
     platform::run_return::EventLoopExtRunReturn,
-    window::Window,
+    
 };
 
 //use winit::platform::desktop::EventLoopExtDesktop;
@@ -15,13 +14,12 @@ use winit::{
 pub mod geom;
 pub mod model;
 pub mod texture;
-use model::{DrawModel, Material, Vertex};
+use model::Material;
 pub mod shapes;
-use shapes::*;
+
 pub mod camera;
-use camera::Camera;
+
 pub mod camera_control;
-use camera_control::CameraController;
 
 pub mod collision;
 
@@ -38,9 +36,7 @@ pub mod events;
 use events::Events;
 
 pub mod physics;
-use physics::*;
 
-use crate::{geom::Pos3, music::Sound};
 
 pub mod text;
 

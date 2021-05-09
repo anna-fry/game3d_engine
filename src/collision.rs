@@ -1,8 +1,8 @@
 // use super::{Marble, Wall};
-use crate::geom::{Mat4, Plane, Sphere, Vec3};
+use crate::geom::Vec3;
 use crate::physics::{Physics, DT};
 use crate::shapes::*;
-use crate::{geom::*, physics};
+use crate::geom::*;
 const COEFF_R: f32 = 0.5;
 
 #[derive(Clone, Copy, Debug)]

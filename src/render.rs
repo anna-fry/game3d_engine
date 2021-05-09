@@ -359,7 +359,7 @@ pub struct InstanceGroups {
     groups_2d: Vec<(Rect, Rect, Rc<Material>, Option<wgpu::Buffer>)>,
 }
 impl InstanceGroups {
-    fn new(device: &wgpu::Device) -> Self {
+    fn new(_device: &wgpu::Device) -> Self {
         Self {
             groups: BTreeMap::new(),
             groups_2d: vec![],
