@@ -40,7 +40,7 @@ use events::Events;
 pub mod physics;
 use physics::*;
 
-use crate::music::Sound;
+use crate::{geom::Pos3, music::Sound};
 
 pub mod text;
 

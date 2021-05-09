@@ -154,9 +154,9 @@ impl Components {
 
         let camera = CameraController::new();
         
-        let hammer_sound = Sound::load("content/ball_collide.mp3").unwrap();
+        let collide_sound = Sound::load("content/ball_collide.mp3").unwrap();
         
-        let sounds = vec![(hammer_sound, true)];
+        let sounds = vec![(collide_sound, true)];
         Components {
             balls: balls,
             statics: walls,
