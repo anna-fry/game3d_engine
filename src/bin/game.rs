@@ -60,6 +60,7 @@ pub struct Components {
     sounds: Vec<(Sound, bool)>,
     text: Vec<Sentence>,
     text_mat: Rc<Material>,
+    menu: (Rect, f32, Rc<Material>),
     // shapes: Vec<Shape>,    // in engine
     // events: Events,        // in engine, inputs from keyboard/keys
     camera: CameraController, // in engine
@@ -70,6 +71,7 @@ impl Components {
     pub fn new(engine: &mut Engine) -> Self {
         let empty_meter = engine.load_material("empty-meter", "content/empty-meter.png");
         let full_meter = engine.load_material("full-meter", "content/full-meter.png");
+        let menu = engine.load_material("menu", "content/menu.png");
         let text_mat = engine.load_material("ascii", "content/ascii.png");
 
         let meter = vec![
@@ -166,6 +168,7 @@ impl Components {
             sounds: sounds,
             text: text,
             text_mat: text_mat,
+            menu: (Rect { x: -0.9, y: -0.9, w: 1.8, h: 1.8 }, 1.0, menu),
             camera: camera,
             mode: Mode::TitleScreen
         }
@@ -267,10 +270,10 @@ impl Game for BallGame {
                     save_game(&mut self.components);
                 }
                 self.components
-            .camera
-            .update(&engine.events, &mut self.components.balls[0]);
-            self.components.camera.update_camera(engine.camera_mut());
-            self.systems.process(&engine.events, &mut self.components, &engine.sink);
+                    .camera
+                    .update(&engine.events, &mut self.components.balls[0]);
+                self.components.camera.update_camera(engine.camera_mut());
+                self.systems.process(&engine.events, &mut self.components, &engine.sink);
             }
             Mode::EndGame => {}
         }
@@ -279,34 +282,42 @@ impl Game for BallGame {
     }
 
     fn render(&self, igs: &mut InstanceGroups) {
-        for ball in self.components.balls.iter() {
-            ball.render(self.components.models.ball_model, igs);
+        match self.components.mode {
+            Mode::TitleScreen => {             
+                igs.render_bar(&self.components.menu.0, self.components.menu.1, &self.components.menu.2);
+            },
+            Mode::GamePlay => {
+                for ball in self.components.balls.iter() {
+                    ball.render(self.components.models.ball_model, igs);
+                }
+        
+                for stat in self.components.statics.iter() {
+                    //I just picked the floor value that was different from the rest
+                    if stat.body.n.y == 1.0 {
+                        stat.render(self.components.models.floor_model, igs);
+                    } else {
+                        stat.render(self.components.models.wall_model, igs);
+                    }
+                }
+        
+                self.components
+                    .goal
+                    .render(self.components.models.goal_model, igs);
+        
+        
+                for (rect, power, mat) in self.components.meter.iter() {
+                    igs.render_bar(&rect, *power, mat);
+                }
+        
+                for sentence in self.components.text.iter() {
+                    sentence.draw_sentence(igs, &self.components.text_mat);
+                }
+        
+                let score_sentence = Sentence::text_to_sentence(&("Score: ".to_string() + &self.components.score.to_string()), [-0.2, 0.9]);
+                score_sentence.draw_sentence(igs, &self.components.text_mat);
+            },
+            Mode::EndGame => ()
         }
-
-        for stat in self.components.statics.iter() {
-            //I just picked the floor value that was different from the rest
-            if stat.body.n.y == 1.0 {
-                stat.render(self.components.models.floor_model, igs);
-            } else {
-                stat.render(self.components.models.wall_model, igs);
-            }
-        }
-
-        self.components
-            .goal
-            .render(self.components.models.goal_model, igs);
-
-
-        for (rect, power, mat) in self.components.meter.iter() {
-            igs.render_bar(&rect, *power, mat);
-        }
-
-        for sentence in self.components.text.iter() {
-            sentence.draw_sentence(igs, &self.components.text_mat);
-        }
-
-        let score_sentence = Sentence::text_to_sentence(&("Score: ".to_string() + &self.components.score.to_string()), [-0.2, 0.9]);
-        score_sentence.draw_sentence(igs, &self.components.text_mat);
     }
 }
 
