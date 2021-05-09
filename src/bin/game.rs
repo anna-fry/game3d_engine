@@ -60,7 +60,7 @@ pub struct Components {
     sounds: Vec<(Sound, bool)>,
     text: Vec<Sentence>,
     text_mat: Rc<Material>,
-    menu: (Rect, f32, Rc<Material>),
+    menu: (Rect, Rect, Rc<Material>),
     // shapes: Vec<Shape>,    // in engine
     // events: Events,        // in engine, inputs from keyboard/keys
     camera: CameraController, // in engine
@@ -168,7 +168,7 @@ impl Components {
             sounds: sounds,
             text: text,
             text_mat: text_mat,
-            menu: (Rect { x: -0.9, y: -0.9, w: 1.8, h: 1.8 }, 1.0, menu),
+            menu: (Rect { x: -0.9, y: -0.9, w: 1.8, h: 1.8 }, Rect {x: 0.0, y: 0.0, w: 1.0, h: 1.0}, menu),
             camera: camera,
             mode: Mode::TitleScreen
         }
@@ -266,7 +266,7 @@ impl Game for BallGame {
                 }
             }
             Mode::GamePlay => {
-                if engine.events.key_held(VirtualKeyCode::P){
+                if engine.events.key_held(VirtualKeyCode::S){
                     save_game(&mut self.components);
                 }
                 self.components
@@ -284,7 +284,7 @@ impl Game for BallGame {
     fn render(&self, igs: &mut InstanceGroups) {
         match self.components.mode {
             Mode::TitleScreen => {             
-                igs.render_bar(&self.components.menu.0, self.components.menu.1, &self.components.menu.2);
+                igs.render_2d(&self.components.menu.0, &self.components.menu.1, &self.components.menu.2);
             },
             Mode::GamePlay => {
                 for ball in self.components.balls.iter() {
