@@ -15,7 +15,7 @@ use std::io::prelude::*;
 
 // mod model;
 // mod texture;
-use game3d_engine::{Engine, Game, model::{DrawModel, Material, Model, Model2DVertex, ModelVertex, Vertex}, music::Sound, render::InstanceGroups, run, text::Sentence};
+use game3d_engine::{Engine, Game, audio::Audio, model::{DrawModel, Material, Model, Model2DVertex, ModelVertex, Vertex}, music::Sound, render::InstanceGroups, run, text::Sentence};
 
 use game3d_engine::texture::*;
 
@@ -57,7 +57,6 @@ pub struct Components {
     physics: Vec<Physics>, // in engine
     models: GameData,      // in engine
     score: usize,
-    // sink: SpatialSink,
     sounds: Vec<(Sound, bool)>,
     text: Vec<Sentence>,
     text_mat: Rc<Material>,
@@ -164,7 +163,6 @@ impl Components {
             physics: physics,
             models: game_data,
             score: 0,
-            // sink: engine.sink,
             sounds: sounds,
             text: text,
             text_mat: text_mat,
@@ -187,7 +185,7 @@ impl Systems {
             collision_detection: CollisionDetection::new(),
         }
     }
-    pub fn process(&mut self, events: &Events, c: &mut Components, sink: &SpatialSink) {
+    pub fn process(&mut self, events: &Events, c: &mut Components, sink: &Audio) {
         self.ball_movement
             .update(events, &mut c.balls, &mut c.meter[1], &mut c.physics);
         let effect =
@@ -212,8 +210,9 @@ impl Systems {
 
                     let pos = c.balls[0].body.c;
                     // c.sink.set_volume(2.0);
-                    sink.set_emitter_position([pos.x, pos.y, pos.z]);
-                    sink.append(c.sounds[0].0.decoder());
+                    // sink.set_emitter_position([pos.x, pos.y, pos.z]);
+                    // sink.append(c.sounds[0].0.decoder());
+                    sink.play(pos, c.sounds[0].0.clone());
                     c.sounds[0].1 = false;
                 }
 

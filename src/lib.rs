@@ -1,6 +1,6 @@
 use cgmath::prelude::*;
 use rand;
-use rodio::{OutputStreamHandle, Source, SpatialSink};
+// use rodio;
 use std::{iter, path::Path, rc::Rc};
 use wgpu::util::DeviceExt;
 use winit::{
@@ -31,6 +31,9 @@ use assets::*;
 pub mod render;
 use render::*;
 
+pub mod audio;
+use audio::*;
+
 pub mod events;
 use events::Events;
 
@@ -59,7 +62,7 @@ pub struct Engine {
     pub assets: Assets,
     render: Render,
     pub events: Events,
-    pub sink: SpatialSink,
+    pub sink: Audio,
 }
 
 impl Engine {
@@ -86,12 +89,7 @@ impl Engine {
     pub fn camera_mut(&mut self) -> &mut camera::Camera {
         &mut self.render.camera
     }
-    // pub fn set_ambient(&mut self, amb: f32) {
-    //     self.render.set_ambient(amb);
-    // }
-    // pub fn set_lights(&mut self, lights: impl IntoIterator<Item = lights::Light>) {
-    //     self.render.set_lights(lights.into_iter().collect());
-    // }
+
 }
 
 pub fn run<C, S, G: Game<StaticData = C, SystemData = S>>(
@@ -103,10 +101,9 @@ pub fn run<C, S, G: Game<StaticData = C, SystemData = S>>(
     let window = window_builder.build(&event_loop).unwrap();
     let assets = Assets::new(asset_root);
     use futures::executor::block_on;
-    let (_stream, stream_handle) = rodio::OutputStream::try_default().unwrap();
-    let sink = Sound::spatial_sink(&stream_handle, [-2.0, 1.5, -3.0], [-19.0, 5.0, -20.0], [-21.0, 5.0, -20.0]);
     let render = block_on(Render::new(&window));
     let events = Events::default();
+    let sink = Audio::new();
     let mut engine = Engine {
         assets,
         render,
