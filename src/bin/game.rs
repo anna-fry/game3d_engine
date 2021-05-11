@@ -263,7 +263,7 @@ impl Game for BallGame {
                 }
             }
             Mode::GamePlay => {
-                if engine.events.key_held(VirtualKeyCode::S){
+                if engine.events.key_held(VirtualKeyCode::P){
                     save_game(&mut self.components);
                    
                 }
